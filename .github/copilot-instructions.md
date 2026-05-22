@@ -36,6 +36,7 @@
 - **Workflow:** Simplified GitFlow (`main` and `dev`). Features branch from `dev` as `feature/feature-name`.
 - **Commits:** Conventional Commits in English (e.g., `feat(auth): ...`, `fix(importer): ...`).
 - **Atomic Cycle:** Strictly one consolidated commit per task. **Sequence:** 1. `git diff` (inspect) -> 2. Single `git add <files>` -> 3. Single `git commit -m "..."`. No fragmented sequential commits.
+ - **Commit location:** Commits must be performed on the host machine (not inside containers).
 
 ## 7. Agent Protocol & Trust Policy
 
