@@ -1,7 +1,11 @@
 @import url("https://fonts.bunny.net/css?family=figtree:400,500,600&display=swap");
 
 @import "tailwindcss";
+@import "flowbite/src/themes/default";
 
+@plugin "flowbite/plugin";
+
+@source "../../node_modules/flowbite";
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
 @source '../../storage/framework/views/*.php';
 @source '../**/*.blade.php';
