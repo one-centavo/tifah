@@ -22,8 +22,6 @@ services:
             args:
                 user: laravel_user
                 uid: ${UID:-1000}
-        env_file:
-            - .env
         volumes:
             - .:/var/www/html
             - ./docker/php/msmtprc:/etc/msmtprc:ro
