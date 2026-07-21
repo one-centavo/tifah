@@ -26,6 +26,7 @@ class DatabaseSeeder extends Seeder
         $this->call([
             CategorySeeder::class,
             LaboratorySeeder::class,
+            ConcentrationUnitSeeder::class,
         ]);
     }
 }
