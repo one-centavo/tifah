@@ -15,4 +15,9 @@
     --font-sans:
         "Figtree", ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji",
         "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+
+    /* Layout Colors */
+    --color-sidebar: #F4F6F8;
+    --color-navbar: #FFFFFF;
+    --color-main-bg: #FAFCFF;
 }

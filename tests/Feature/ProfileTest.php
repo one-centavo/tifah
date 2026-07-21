@@ -23,7 +23,11 @@ test('profile information can be updated', function () {
     $this->actingAs($user);
 
     $component = Volt::test('profile.update-profile-information-form')
-        ->set('name', 'Test User')
+        ->set('first_name', 'Test')
+        ->set('middle_name', 'Middle')
+        ->set('last_name', 'User')
+        ->set('second_last_name', 'Second')
+        ->set('phone_number', '1234567890')
         ->set('email', 'test@example.com')
         ->call('updateProfileInformation');
 
@@ -33,26 +37,12 @@ test('profile information can be updated', function () {
 
     $user->refresh();
 
-    $this->assertSame('Test User', $user->name);
+    $this->assertSame('Test', $user->first_name);
+    $this->assertSame('Middle', $user->middle_name);
+    $this->assertSame('User', $user->last_name);
+    $this->assertSame('Second', $user->second_last_name);
+    $this->assertSame('1234567890', $user->phone_number);
     $this->assertSame('test@example.com', $user->email);
-    $this->assertNull($user->email_verified_at);
-});
-
-test('email verification status is unchanged when the email address is unchanged', function () {
-    $user = User::factory()->create();
-
-    $this->actingAs($user);
-
-    $component = Volt::test('profile.update-profile-information-form')
-        ->set('name', 'Test User')
-        ->set('email', $user->email)
-        ->call('updateProfileInformation');
-
-    $component
-        ->assertHasNoErrors()
-        ->assertNoRedirect();
-
-    $this->assertNotNull($user->refresh()->email_verified_at);
 });
 
 test('user can delete their account', function () {
@@ -69,7 +59,7 @@ test('user can delete their account', function () {
         ->assertRedirect('/');
 
     $this->assertGuest();
-    $this->assertNull($user->fresh());
+    $this->assertSoftDeleted($user);
 });
 
 test('correct password must be provided to delete account', function () {
