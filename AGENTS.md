@@ -17,6 +17,11 @@ Management system for pharmaceutical distributor and traceability
 - `docker compose exec app php artisan test` - Run the tests (run this before commit)
 - `docker compose exec app php pnpm run build` - Compile for production
 
+## Project Estructure
+
+- `app/services/` - Contains the bussiness logic
+- `resources/views/livewire` Contains the liveiwire components, whith act as controllers and view
+
 ## Conventions
 
 - **Git Language:** All commit messages and name branchs MUST be written strictly in English.
