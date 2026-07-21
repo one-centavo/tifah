@@ -11,10 +11,11 @@ RUN apt update && apt install -y \
     unzip \
     msmtp \
     libzip-dev \
+    libsqlite3-dev \
     && apt clean && rm -rf /var/lib/apt/lists/*
 
 # Install PHP extensions (Added zip)
-RUN docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd zip
+RUN docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd zip pdo_sqlite
 
 ARG user=laravel_user
 ARG uid=1000
