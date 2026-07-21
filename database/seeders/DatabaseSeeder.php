@@ -28,6 +28,7 @@ class DatabaseSeeder extends Seeder
             LaboratorySeeder::class,
             ConcentrationUnitSeeder::class,
             ContainerSeeder::class,
+            ContentUnitSeeder::class,
         ]);
     }
 }
