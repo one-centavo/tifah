@@ -47,14 +47,6 @@ class ConcentrationUnitSeeder extends Seeder
                 'symbol' => 'mEq',
             ],
             [
-                'name' => 'Mililitro',
-                'symbol' => 'ml',
-            ],
-            [
-                'name' => 'Litro',
-                'symbol' => 'l',
-            ],
-            [
                 'name' => 'Porcentaje peso/volumen',
                 'symbol' => '% w/v',
             ],

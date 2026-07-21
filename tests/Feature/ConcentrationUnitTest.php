@@ -20,14 +20,9 @@ it('can seed concentration units using ConcentrationUnitSeeder', function () {
     ]);
 
     $this->assertDatabaseHas('concentration_units', [
-        'name' => 'Mililitro',
-        'symbol' => 'ml',
+        'name' => 'Microgramo por Mililitro',
+        'symbol' => 'mcg/ml',
     ]);
 
-    $this->assertDatabaseHas('concentration_units', [
-        'name' => 'Litro',
-        'symbol' => 'l',
-    ]);
-
-    expect(ConcentrationUnit::count())->toBe(18);
+    expect(ConcentrationUnit::count())->toBe(16);
 });
