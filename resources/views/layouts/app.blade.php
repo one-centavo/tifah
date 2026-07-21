@@ -233,24 +233,21 @@
                         id="user-menu-button" aria-expanded="false" data-dropdown-toggle="dropdown">
                         <span class="sr-only">Open user menu</span>
                         <img class="w-8 h-8 rounded-full"
-                            src="https://flowbite.s3.amazonaws.com/blocks/marketing-ui/avatars/michael-gough.png"
-                            alt="user photo" />
+                            src="https://ui-avatars.com/api/?name={{ urlencode(auth()->user()->name) }}&color=7F9CF5&background=EBF4FF"
+                            alt="{{ auth()->user()->name }}" />
                     </button>
                     <!-- Dropdown menu -->
                     <div class="hidden z-50 my-4 w-56 text-base list-none bg-white rounded divide-y divide-gray-100 shadow rounded-xl"
                         id="dropdown">
                         <div class="py-3 px-4">
-                            <span class="block text-sm font-semibold text-gray-900">Neil Sims</span>
-                            <span class="block text-sm text-gray-900 truncate">name@flowbite.com</span>
+                            <span class="block text-sm font-semibold text-gray-900">{{ auth()->user()->name }}</span>
+                            <span class="block text-sm text-gray-500 truncate">{{ auth()->user()->email }}</span>
                         </div>
                         <ul class="py-1 text-gray-700" aria-labelledby="dropdown">
                             <li>
-                                <a href="#" class="block py-2 px-4 text-sm hover:bg-gray-100">My
-                                    profile</a>
-                            </li>
-                            <li>
-                                <a href="#" class="block py-2 px-4 text-sm hover:bg-gray-100">Account
-                                    settings</a>
+                                <a href="{{ route('profile') }}" class="block py-2 px-4 text-sm hover:bg-gray-100" wire:navigate>
+                                    {{ __('Profile') }}
+                                </a>
                             </li>
                         </ul>
                         <ul class="py-1 text-gray-700" aria-labelledby="dropdown">
@@ -298,8 +295,12 @@
                         </ul>
                         <ul class="py-1 text-gray-700" aria-labelledby="dropdown">
                             <li>
-                                <a href="#" class="block py-2 px-4 text-sm hover:bg-gray-100">Sign
-                                    out</a>
+                                <form method="POST" action="{{ route('logout') }}">
+                                    @csrf
+                                    <button type="submit" class="block w-full text-left py-2 px-4 text-sm hover:bg-gray-100 text-red-600 font-medium">
+                                        {{ __('Log Out') }}
+                                    </button>
+                                </form>
                             </li>
                         </ul>
                     </div>
