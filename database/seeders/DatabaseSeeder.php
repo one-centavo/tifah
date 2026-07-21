@@ -30,6 +30,7 @@ class DatabaseSeeder extends Seeder
             ConcentrationUnitSeeder::class,
             ContainerSeeder::class,
             ContentUnitSeeder::class,
+            MedicineSeeder::class,
         ]);
     }
 }
