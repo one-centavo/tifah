@@ -8,7 +8,11 @@ use Livewire\Volt\Component;
 
 new class extends Component
 {
-    public string $name = '';
+    public string $first_name = '';
+    public string $middle_name = '';
+    public string $last_name = '';
+    public string $second_last_name = '';
+    public string $phone_number = '';
     public string $email = '';
 
     /**
@@ -16,8 +20,13 @@ new class extends Component
      */
     public function mount(): void
     {
-        $this->name = Auth::user()->name;
-        $this->email = Auth::user()->email;
+        $user = Auth::user();
+        $this->first_name = $user->first_name ?? '';
+        $this->middle_name = $user->middle_name ?? '';
+        $this->last_name = $user->last_name ?? '';
+        $this->second_last_name = $user->second_last_name ?? '';
+        $this->phone_number = $user->phone_number ?? '';
+        $this->email = $user->email ?? '';
     }
 
     /**
@@ -28,15 +37,15 @@ new class extends Component
         $user = Auth::user();
 
         $validated = $this->validate([
-            'name' => ['required', 'string', 'max:255'],
+            'first_name' => ['required', 'string', 'max:100'],
+            'middle_name' => ['nullable', 'string', 'max:100'],
+            'last_name' => ['required', 'string', 'max:100'],
+            'second_last_name' => ['nullable', 'string', 'max:100'],
+            'phone_number' => ['required', 'string', 'max:15'],
             'email' => ['required', 'string', 'lowercase', 'email', 'max:255', Rule::unique(User::class)->ignore($user->id)],
         ]);
 
         $user->fill($validated);
-
-        if ($user->isDirty('email')) {
-            $user->email_verified_at = null;
-        }
 
         $user->save();
 
@@ -74,10 +83,36 @@ new class extends Component
     </header>
 
     <form wire:submit="updateProfileInformation" class="mt-6 space-y-6">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+                <x-input-label for="first_name" :value="__('First Name')" />
+                <x-text-input wire:model="first_name" id="first_name" name="first_name" type="text" class="mt-1 block w-full" required autofocus autocomplete="given-name" />
+                <x-input-error class="mt-2" :messages="$errors->get('first_name')" />
+            </div>
+
+            <div>
+                <x-input-label for="middle_name" :value="__('Middle Name')" />
+                <x-text-input wire:model="middle_name" id="middle_name" name="middle_name" type="text" class="mt-1 block w-full" autocomplete="additional-name" />
+                <x-input-error class="mt-2" :messages="$errors->get('middle_name')" />
+            </div>
+
+            <div>
+                <x-input-label for="last_name" :value="__('Last Name')" />
+                <x-text-input wire:model="last_name" id="last_name" name="last_name" type="text" class="mt-1 block w-full" required autocomplete="family-name" />
+                <x-input-error class="mt-2" :messages="$errors->get('last_name')" />
+            </div>
+
+            <div>
+                <x-input-label for="second_last_name" :value="__('Second Last Name')" />
+                <x-text-input wire:model="second_last_name" id="second_last_name" name="second_last_name" type="text" class="mt-1 block w-full" autocomplete="family-name" />
+                <x-input-error class="mt-2" :messages="$errors->get('second_last_name')" />
+            </div>
+        </div>
+
         <div>
-            <x-input-label for="name" :value="__('Name')" />
-            <x-text-input wire:model="name" id="name" name="name" type="text" class="mt-1 block w-full" required autofocus autocomplete="name" />
-            <x-input-error class="mt-2" :messages="$errors->get('name')" />
+            <x-input-label for="phone_number" :value="__('Phone Number')" />
+            <x-text-input wire:model="phone_number" id="phone_number" name="phone_number" type="text" class="mt-1 block w-full" required autocomplete="tel" />
+            <x-input-error class="mt-2" :messages="$errors->get('phone_number')" />
         </div>
 
         <div>
