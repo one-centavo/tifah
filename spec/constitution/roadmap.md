@@ -16,6 +16,7 @@ _Features completadas, en orden de implementación._
 _Lo próximo a abordar. Idealmente una sola feature "en curso" a la vez._
 
 1. **005 · Create Laboratory & Laboratory Management** — Permite registrar y administrar el catálogo de laboratorios fabricantes de medicamentos, aplicando borrado lógico y previniendo la eliminación si existen productos asociados.
+2. **006 · Edit Laboratory** — Permite la edición de la información de laboratorios previamente registrados, garantizando la validación de unicidad en registros activos y la trazabilidad de las modificaciones.
 
 ## Backlog / ideas 💡
 
