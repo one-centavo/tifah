@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services;
 
 use App\Models\Category;
+use Illuminate\Validation\ValidationException;
 
 class CategoryService
 {
@@ -38,6 +39,12 @@ class CategoryService
      */
     public function delete(Category $category): void
     {
+        if ($category->medicines()->exists()) {
+            throw ValidationException::withMessages([
+                'category' => 'No se puede eliminar la categoría porque tiene medicamentos activos asociados.',
+            ]);
+        }
+
         $category->update(['deleted_by' => auth()->id()]);
         $category->delete();
     }

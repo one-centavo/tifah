@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Models\Category;
+use App\Models\Medicine;
 use App\Models\User;
 use Livewire\Volt\Volt;
 
@@ -45,7 +46,8 @@ test('it can soft delete a category and record deleter', function () {
     $this->actingAs($user);
 
     $component = Volt::test('categories.index')
-        ->call('deleteCategory', $category->id);
+        ->call('confirmCategoryDeletion', $category->id)
+        ->call('deleteCategory');
 
     $component
         ->assertHasNoErrors()
@@ -54,6 +56,32 @@ test('it can soft delete a category and record deleter', function () {
     $this->assertSoftDeleted('categories', [
         'id' => $category->id,
         'deleted_by' => $user->id,
+    ]);
+});
+
+test('it cannot delete a category if it has active medicines', function () {
+    $user = User::factory()->create();
+    $category = Category::factory()->create(['name' => 'Categoría con Medicamentos']);
+
+    // Create an active medicine associated with this category
+    Medicine::factory()->create([
+        'category_id' => $category->id,
+    ]);
+
+    $this->actingAs($user);
+
+    $component = Volt::test('categories.index')
+        ->call('confirmCategoryDeletion', $category->id)
+        ->call('deleteCategory');
+
+    $component
+        ->assertHasErrors(['deletion_error'])
+        ->assertSee('No se puede eliminar la categoría porque tiene medicamentos activos asociados.');
+
+    // Verify it was NOT soft-deleted
+    $this->assertDatabaseHas('categories', [
+        'id' => $category->id,
+        'deleted_at' => null,
     ]);
 });
 
