@@ -22,6 +22,19 @@ class LaboratoryService
     }
 
     /**
+     * Update an existing laboratory and assign the updater.
+     *
+     * @param  array<string, mixed>  $data
+     */
+    public function update(Laboratory $laboratory, array $data): Laboratory
+    {
+        $data['updated_by'] = auth()->id();
+        $laboratory->update($data);
+
+        return $laboratory;
+    }
+
+    /**
      * Soft delete an existing laboratory and assign the deleter.
      */
     public function delete(Laboratory $laboratory): void
