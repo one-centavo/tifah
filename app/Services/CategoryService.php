@@ -19,4 +19,26 @@ class CategoryService
 
         return Category::create($data);
     }
+
+    /**
+     * Update an existing category and assign the updater.
+     *
+     * @param  array<string, mixed>  $data
+     */
+    public function update(Category $category, array $data): Category
+    {
+        $data['updated_by'] = auth()->id();
+        $category->update($data);
+
+        return $category;
+    }
+
+    /**
+     * Soft delete an existing category and assign the deleter.
+     */
+    public function delete(Category $category): void
+    {
+        $category->update(['deleted_by' => auth()->id()]);
+        $category->delete();
+    }
 }
