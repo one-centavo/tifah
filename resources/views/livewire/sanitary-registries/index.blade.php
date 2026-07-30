@@ -6,6 +6,7 @@ use Livewire\Volt\Component;
 use Livewire\WithPagination;
 use Livewire\Attributes\Layout;
 use App\Models\SanitaryRegistry;
+use App\Models\Laboratory;
 use App\Services\SanitaryRegistryService;
 
 new #[Layout('layouts.app')] class extends Component {
@@ -14,6 +15,9 @@ new #[Layout('layouts.app')] class extends Component {
     public string $search = '';
     public string $softDeleteFilter = 'active';
     public string $statusFilter = 'all';
+    public string $laboratoryFilter = 'all';
+    public string $expirationStart = '';
+    public string $expirationEnd = '';
     public string $sortField = 'registration_number';
     public string $sortDirection = 'asc';
 
@@ -34,6 +38,21 @@ new #[Layout('layouts.app')] class extends Component {
     }
 
     public function updatingStatusFilter(): void
+    {
+        $this->resetPage();
+    }
+
+    public function updatingLaboratoryFilter(): void
+    {
+        $this->resetPage();
+    }
+
+    public function updatingExpirationStart(): void
+    {
+        $this->resetPage();
+    }
+
+    public function updatingExpirationEnd(): void
     {
         $this->resetPage();
     }
@@ -122,12 +141,26 @@ new #[Layout('layouts.app')] class extends Component {
             $query->where('status', $this->statusFilter);
         }
 
-        // 3. Search
+        // 3. Laboratory Filter
+        if ($this->laboratoryFilter !== 'all') {
+            $query->where('laboratory_id', $this->laboratoryFilter);
+        }
+
+        // 4. Expiration Date Range Filter
+        if (!empty($this->expirationStart)) {
+            $query->where('expiration_date', '>=', $this->expirationStart);
+        }
+
+        if (!empty($this->expirationEnd)) {
+            $query->where('expiration_date', '<=', $this->expirationEnd);
+        }
+
+        // 5. Search
         if (!empty(trim($this->search))) {
             $query->where('registration_number', 'like', '%' . trim($this->search) . '%');
         }
 
-        // 4. Sorting
+        // 6. Sorting
         if ($this->sortField === 'laboratory') {
             $query->join('laboratories', 'sanitary_registries.laboratory_id', '=', 'laboratories.id')
                 ->select('sanitary_registries.*')
@@ -138,6 +171,7 @@ new #[Layout('layouts.app')] class extends Component {
 
         return [
             'registries' => $query->paginate(10),
+            'laboratories' => Laboratory::orderBy('name')->get(),
         ];
     }
 }; ?>
@@ -175,7 +209,7 @@ new #[Layout('layouts.app')] class extends Component {
     <!-- Filters Section -->
     <div class="bg-white border border-slate-100 shadow-sm rounded-2xl p-6 mb-6">
         <h2 class="text-lg font-bold text-blue-900 mb-4">Filtrar Registros Sanitarios</h2>
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
             <!-- Search field -->
             <div>
                 <label for="search" class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">Búsqueda</label>
@@ -192,6 +226,18 @@ new #[Layout('layouts.app')] class extends Component {
                 </div>
             </div>
 
+            <!-- Laboratory Filter -->
+            <div>
+                <label for="laboratoryFilter" class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">Laboratorio Fabricante</label>
+                <select id="laboratoryFilter" wire:model.live="laboratoryFilter"
+                    class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all cursor-pointer">
+                    <option value="all">Todos</option>
+                    @foreach($laboratories as $lab)
+                        <option value="{{ $lab->id }}">{{ $lab->name }}</option>
+                    @endforeach
+                </select>
+            </div>
+
             <!-- Record Status Filter -->
             <div>
                 <label for="statusFilter" class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">Estado del Registro</label>
@@ -204,13 +250,27 @@ new #[Layout('layouts.app')] class extends Component {
                 </select>
             </div>
 
+            <!-- Expiration Start Date Filter -->
+            <div>
+                <label for="expirationStart" class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">Vencimiento Desde</label>
+                <input type="date" id="expirationStart" wire:model.live="expirationStart"
+                    class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all cursor-pointer">
+            </div>
+
+            <!-- Expiration End Date Filter -->
+            <div>
+                <label for="expirationEnd" class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">Vencimiento Hasta</label>
+                <input type="date" id="expirationEnd" wire:model.live="expirationEnd"
+                    class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all cursor-pointer">
+            </div>
+
             <!-- Soft Delete filter -->
             <div>
                 <label for="softDeleteFilter" class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">Visibilidad en Catálogo</label>
                 <select id="softDeleteFilter" wire:model.live="softDeleteFilter"
                     class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all cursor-pointer">
-                    <option value="active">Activos</option>
-                    <option value="archived">Archivados</option>
+                    <option value="active">Sí</option>
+                    <option value="archived">No</option>
                     <option value="all">Todos</option>
                 </select>
             </div>
@@ -309,7 +369,7 @@ new #[Layout('layouts.app')] class extends Component {
                                 </button>
                             </th>
                             <th scope="col" class="px-6 py-4 text-center text-xs font-bold text-blue-900 uppercase tracking-wider">Estado</th>
-                            <th scope="col" class="px-6 py-4 text-center text-xs font-bold text-blue-900 uppercase tracking-wider">Borrado</th>
+                            <th scope="col" class="px-6 py-4 text-center text-xs font-bold text-blue-900 uppercase tracking-wider">Visibilidad en catálogo</th>
                             <th scope="col" class="px-6 py-4 text-right text-xs font-bold text-blue-900 uppercase tracking-wider">Acciones</th>
                         </tr>
                     </thead>
@@ -343,11 +403,11 @@ new #[Layout('layouts.app')] class extends Component {
                                 <td class="px-6 py-4 whitespace-nowrap text-center text-sm">
                                     @if($registry->trashed())
                                         <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-800">
-                                            Archivado
+                                            No
                                         </span>
                                     @else
                                         <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-lime-50 text-lime-800 border border-lime-200">
-                                            Activo
+                                            Sí
                                         </span>
                                     @endif
                                 </td>
