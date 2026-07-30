@@ -1,7 +1,5 @@
 # Tech Stack and Conventions
 
-_How the project is built and the rules that all code must respect. It serves as the technical reference that no feature plan should contradict._
-
 ## Technologies
 
 - **Backend:** PHP 8.3 / Laravel 13.8 (Laravel Breeze 2.0)

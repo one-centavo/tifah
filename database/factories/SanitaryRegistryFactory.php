@@ -17,7 +17,7 @@ class SanitaryRegistryFactory extends Factory
     public function definition(): array
     {
         return [
-            'registration_number' => 'INVIMA ' . fake()->unique()->numerify('20##M-#######'),
+            'registration_number' => 'INVIMA '.fake()->unique()->numerify('20##M-#######'),
             'laboratory_id' => Laboratory::factory(),
             'expiration_date' => fake()->dateTimeBetween('+1 year', '+5 years')->format('Y-m-d'),
             'status' => 'valid',
