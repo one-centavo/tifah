@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Models\Laboratory;
 use App\Models\Medicine;
 use App\Models\SanitaryRegistry;
 use App\Models\User;
@@ -152,4 +153,86 @@ test('it can restore a soft-deleted sanitary registry', function () {
         'deleted_at' => null,
         'deleted_by' => null,
     ]);
+});
+
+test('it can filter sanitary registries by laboratory', function () {
+    $user = User::factory()->create();
+    $lab1 = Laboratory::factory()->create(['name' => 'Lab Alpha']);
+    $lab2 = Laboratory::factory()->create(['name' => 'Lab Beta']);
+
+    $registry1 = SanitaryRegistry::factory()->create([
+        'registration_number' => 'INVIMA 2026M-1111111',
+        'laboratory_id' => $lab1->id,
+    ]);
+    $registry2 = SanitaryRegistry::factory()->create([
+        'registration_number' => 'INVIMA 2026M-2222222',
+        'laboratory_id' => $lab2->id,
+    ]);
+
+    $this->actingAs($user);
+
+    // Filter by Lab Alpha
+    $component = Volt::test('sanitary-registries.index', ['laboratoryFilter' => (string) $lab1->id]);
+    $component
+        ->assertSee('INVIMA 2026M-1111111')
+        ->assertDontSee('INVIMA 2026M-2222222');
+});
+
+test('it can filter sanitary registries by expiration date range', function () {
+    $user = User::factory()->create();
+
+    $registry1 = SanitaryRegistry::factory()->create([
+        'registration_number' => 'INVIMA 2026M-1111111',
+        'expiration_date' => '2026-08-01',
+    ]);
+    $registry2 = SanitaryRegistry::factory()->create([
+        'registration_number' => 'INVIMA 2026M-2222222',
+        'expiration_date' => '2026-08-15',
+    ]);
+    $registry3 = SanitaryRegistry::factory()->create([
+        'registration_number' => 'INVIMA 2026M-3333333',
+        'expiration_date' => '2026-09-01',
+    ]);
+
+    $this->actingAs($user);
+
+    // 1. Both start and end dates
+    $component = Volt::test('sanitary-registries.index', [
+        'expirationStart' => '2026-08-05',
+        'expirationEnd' => '2026-08-20',
+    ]);
+    $component
+        ->assertDontSee('INVIMA 2026M-1111111')
+        ->assertSee('INVIMA 2026M-2222222')
+        ->assertDontSee('INVIMA 2026M-3333333');
+
+    // 2. Start date only
+    $component = Volt::test('sanitary-registries.index', [
+        'expirationStart' => '2026-08-10',
+    ]);
+    $component
+        ->assertDontSee('INVIMA 2026M-1111111')
+        ->assertSee('INVIMA 2026M-2222222')
+        ->assertSee('INVIMA 2026M-3333333');
+
+    // 3. End date only
+    $component = Volt::test('sanitary-registries.index', [
+        'expirationEnd' => '2026-08-20',
+    ]);
+    $component
+        ->assertSee('INVIMA 2026M-1111111')
+        ->assertSee('INVIMA 2026M-2222222')
+        ->assertDontSee('INVIMA 2026M-3333333');
+});
+
+test('it displays empty state message when no registries match filters', function () {
+    $user = User::factory()->create();
+    SanitaryRegistry::factory()->create(['registration_number' => 'INVIMA 2026M-1111111']);
+
+    $this->actingAs($user);
+
+    $component = Volt::test('sanitary-registries.index', ['search' => 'NOMATCH']);
+    $component
+        ->assertDontSee('INVIMA 2026M-1111111')
+        ->assertSee('No se encontraron registros sanitarios que coincidan con los filtros aplicados');
 });
