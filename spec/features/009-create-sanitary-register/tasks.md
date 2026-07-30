@@ -1,4 +1,4 @@
-# 008 · Create Sanitary Register & Sanitary Register Management — Tasks
+# 009 · Create Sanitary Register & Sanitary Register Management — Tasks
 
 - [x] Create/Update validation request `StoreSanitaryRegistryRequest` under `App\Http\Requests\SanitaryRegistry`.
 - [x] Create/Update `SanitaryRegistryService` under `App\Services` with `create` and `delete` methods.
