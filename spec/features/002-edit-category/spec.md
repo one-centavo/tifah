@@ -1,31 +1,41 @@
-# 002 · Edit Category
+# 002 · Edit Category & Category Management
 
 **Status:** In Progress
 
 ## What it does
 
-Allows authenticated users (specifically, administrators or warehouse assistants) to modify the information of an existing product category. Users can update the category name, description, and logistical flags (cold chain storage requirement or special control substance). The page also displays a list of medicines currently belonging to this category, illustrating which products will be affected by any changes.
+Provides a central Category Management dashboard (Index page) at `/categories` where authorized users (specifically, administrators or warehouse assistants) can view all active product categories. This dashboard serves as the CRUD hub, offering options to create a new category, navigate to the edit form of a category, and delete a category.
+
+Additionally, allows users to modify the details of an existing product category via the Edit page at `/categories/{category}/edit`. The Edit page displays the current values of the category (Name, Description, Cold Chain, and Special Control) and lists the medicines currently belonging to this category, illustrating which products are affected by the changes.
 
 ## Why
 
-To keep category classifications up to date and correct configuration errors in sanitary or logistical settings. Modifying these constraints ensures that regulatory and warehouse procedures remain accurate, which directly prevents compliance issues or handling errors in the warehouse.
+To maintain an organized and up-to-date classification of products. Having a central management interface (Index) combined with precise editing capabilities allows warehouse and administrative staff to easily correct sanitization or logistical configuration errors, ensuring regulatory compliance and correct product handling.
 
 ## Acceptance criteria
 
-- [ ] Authorized users (administrators or warehouse assistants) can access the category edit page at `/categories/{category}/edit`.
-- [ ] Unauthorized guest users attempting to access the edit page are redirected to the login page.
-- [ ] The edit page successfully loads the target category data into the form, including the fields: Name, Description, Cold Chain Management, and Special Control.
-- [ ] The `name` field is required and must prevent saving if left empty.
-- [ ] The `name` field must have a minimum length of 3 characters and a maximum length of 50 characters.
+### Category Management (Index Page)
+- [ ] Authorized users (administrators or warehouse assistants) can access the Category Management index page at `/categories`.
+- [ ] Unauthorized guest users attempting to access the page are redirected to the login page.
+- [ ] The index page displays a clear, paginated list or table of all registered categories, showing their Name, Description, Cold Chain Management, and Special Control status.
+- [ ] The index page includes a prominent button to navigate to the category creation page (`/categories/create`).
+- [ ] Each category row in the table has a button or link to navigate to its respective Edit page (`/categories/{category}/edit`).
+- [ ] Each category row has an option to delete the category (soft delete), automatically logging `deleted_by` with the authenticated user's ID.
+
+### Category Edit Page
+- [ ] Authorized users can access the edit page at `/categories/{category}/edit` by clicking the edit option in the category list.
+- [ ] The edit form loads the target category data: Name, Description, Cold Chain Management, and Special Control.
+- [ ] The `name` field is required and prevents saving if left empty.
+- [ ] The `name` field has a length constraint of minimum 3 characters and maximum 50 characters.
 - [ ] The `description` field is optional and has a maximum length of 255 characters.
 - [ ] The system validates that the modified `name` is unique in the database among active categories, excluding the category currently being edited.
-- [ ] The switches/checkboxes for "Cold Chain Management" (`is_cold_chain`) and "Special Control" (`is_special_control`) are loaded with their previously saved values, allowing the user to modify them.
-- [ ] The system automatically records the authenticated user's ID as the modifier (`updated_by`) and updates the modification timestamp (`updated_at`), while preserving the original creation details (`created_by`, `created_at`).
-- [ ] In case of invalid inputs (e.g., duplicated name or incorrect format), the system shows a clear validation error message in Spanish (Colombia) next to the corresponding field before saving.
-- [ ] The edit page displays a list of medicines currently belonging to the category, highlighting which products are affected by the changes.
-- [ ] Upon a successful update, the system displays a clear confirmation message in Spanish (Colombia) and the category remains active and enabled for use.
+- [ ] Logistical switches for "Cold Chain Management" (`is_cold_chain`) and "Special Control" (`is_special_control`) are loaded with their current database value and can be modified.
+- [ ] The system automatically records the authenticated user's ID as the modifier (`updated_by`) and updates the `updated_at` timestamp while keeping the original creation information intact.
+- [ ] Upon submitting invalid data, the system shows clear validation error messages in Spanish (Colombia) next to the corresponding fields without saving.
+- [ ] The edit page displays a list of medicines belonging to the category, illustrating which products are affected.
+- [ ] Upon a successful update, the system displays a success confirmation message in Spanish (Colombia) and the category remains active and enabled for use.
 
 ## Out of scope
 
-- Creating, listing, or deleting categories on this specific edit page (handled by separate features).
-- Changing the category of a medicine from this view (medicines are updated in the medicine management module).
+- Bulk importing or exporting categories from spreadsheets (handled in another feature).
+- Reassigning medicine categories directly from this management view.

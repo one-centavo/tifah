@@ -1,65 +1,84 @@
-# 002 · Edit Category — Plan
+# 002 · Edit Category & Category Management — Plan
 
 ## Approach
 
-We will implement the Category Modification feature using the established decoupled architecture:
+We will implement the Category Management page (Index) and Category Edit feature using the decoupled MVC architecture with Livewire Volt:
 
-- The service layer (`App\Services\CategoryService`) will handle updating the Eloquent model instance, ensuring `updated_by` is set to the currently authenticated user's ID.
-- A dedicated `UpdateCategoryRequest` class will encapsulate the validation rules, specifically implementing a unique check that ignores the category currently being updated and filters out soft-deleted records.
-- A Livewire Volt Single File Component (`resources/views/livewire/categories/edit.blade.php`) will handle the view and controller logic: binding form state, initiating the validation, calling the service, showing confirmation messages, and listing the affected medicines.
-
-This keeps user interface and validation separate, maintains clean controllers, and ensures testability of the update process.
+- **Service Layer (`App\Services\CategoryService`):**
+  - Handles category updates: persists changes and sets the `updated_by` field to the currently authenticated user's ID.
+  - Handles category deletions: sets the `deleted_by` field to the currently authenticated user's ID and performs the soft delete operation.
+- **Form Request (`App\Http\Requests\Category\UpdateCategoryRequest`):**
+  - Extends `CategoryRequestBase`.
+  - Implements the validation rules for editing, ensuring name uniqueness excludes the current category and ignores soft-deleted ones.
+- **Livewire Volt Components:**
+  - **Index View (`resources/views/livewire/categories/index.blade.php`):**
+    - Lists active categories in a paginated list/table.
+    - Links to category creation and edit pages.
+    - Provides a delete button that calls the service layer to soft-delete the category.
+  - **Edit View (`resources/views/livewire/categories/edit.blade.php`):**
+    - Binds the category properties and handles editing form.
+    - Queries `$category->medicines` to list all medicines belonging to the category.
+    - Calls the service layer to save updates.
 
 ## Implementation
 
-1. **Service Layer Update:**
-   - Open [CategoryService.php](file:///home/one-centavo/Proyectos/tifah/app/Services/CategoryService.php).
-   - Add a public method `update(Category $category, array $data): Category` that accepts the category model and updated inputs.
-   - Automatically assign `updated_by` to the authenticated user's ID via `auth()->id()`.
-   - Update the model instance and return it.
+1. **Service Layer Setup:**
+   - In [CategoryService.php](file:///home/one-centavo/Proyectos/tifah/app/Services/CategoryService.php), implement:
+     - `update(Category $category, array $data): Category`: Sets `updated_by = auth()->id()` and updates the category.
+     - `delete(Category $category): void`: Sets `deleted_by = auth()->id()`, saves the model, and then calls `$category->delete()` to soft-delete it.
 
-2. **Validation Strategy:**
-   - Create a new concrete FormRequest class `UpdateCategoryRequest` at `app/Http/Requests/Category/UpdateCategoryRequest.php` extending `CategoryRequestBase`.
-   - Implement the `rules(?int $ignoreId = null)` method:
-     - Merge the specific name rules with the common rules from the base class.
-     - Use `Rule::unique('categories', 'name')->ignore($ignoreId)->whereNull('deleted_at')` to validate name uniqueness against active categories (excluding itself).
+2. **Validation Setup:**
+   - Create `app/Http/Requests/Category/UpdateCategoryRequest.php` extending `CategoryRequestBase`.
+   - Implement `rules(?int $ignoreId = null): array` merging name uniqueness check with common rules:
+     - Name validation: `['required', 'string', 'min:3', 'max:50', Rule::unique('categories', 'name')->ignore($ignoreId)->whereNull('deleted_at')]`.
    - Implement `messages()` returning Spanish (Colombia) error messages.
 
-3. **Livewire Component Development:**
-   - Create the Volt component at `resources/views/livewire/categories/edit.blade.php`.
-   - Define properties for `$category` (Model binding), `$name`, `$description`, `$is_cold_chain`, and `$is_special_control`.
-   - In the `mount(Category $category)` method, populate the form fields and load the category's medicines.
-   - Implement a dynamic `rules()` method that returns `(new UpdateCategoryRequest())->rules($this->category->id)`.
-   - Implement `save(CategoryService $categoryService)` method:
-     - Perform validation.
-     - Call `$categoryService->update($this->category, $validated)`.
-     - Flash a success message and keep the updated values in the form.
-   - Build the view layout:
-     - The top section contains the category update form matching the design of the create form.
-     - The bottom section displays the list/table of affected medicines belonging to this category.
+3. **Livewire Component - Index Page:**
+   - Create Volt component at `resources/views/livewire/categories/index.blade.php` using layout `layouts.app`.
+   - Define a computed property or query for `$categories` with pagination.
+   - Design a table showing Name, Description, Cold Chain status, and Special Control status.
+   - Add navigation link to `/categories/create` for creating categories.
+   - For each category row, add:
+     - An edit button linking to `/categories/{category}/edit`.
+     - A delete button that prompts user confirmation and calls a `delete(int $id, CategoryService $service)` action.
+   - On delete, call `$service->delete($category)`, flash a success message, and refresh the component.
 
-4. **Routing:**
-   - Open `routes/web.php`.
-   - Add `Volt::route('categories/{category}/edit', 'categories.edit')->name('categories.edit');` inside the `auth` middleware group.
+4. **Livewire Component - Edit Page:**
+   - Create Volt component at `resources/views/livewire/categories/edit.blade.php` using layout `layouts.app`.
+   - Properties: `$category`, `$name`, `$description`, `$is_cold_chain`, `$is_special_control`.
+   - In `mount(Category $category)`:
+     - Load values: `$this->category = $category;`, `$this->name = $category->name;`, etc.
+   - In `save(CategoryService $service)` action:
+     - Validate input using rules from `UpdateCategoryRequest` passing the category's ID.
+     - Call `$service->update($this->category, $validated)`.
+     - Flash success message in Spanish (Colombia).
+   - In the view:
+     - Render the form (top section).
+     - Render a table listing `$category->medicines` displaying their Name, Generic Name, and Selling Price (bottom section).
 
-5. **Testing & QA:**
-   - Create `tests/Feature/Pages/Categories/EditCategoryTest.php`.
-   - Write Pest feature tests covering:
-     - Redirect guest users.
-     - Authorized user access.
-     - Validation: name required, min 3, max 50 characters, description max 255.
-     - Validation: uniqueness check ignoring itself and ignoring soft-deleted categories.
-     - Database verification for updated data and `updated_by`.
-     - Verification of the affected medicines listing on the edit page.
+5. **Routing:**
+   - Open `routes/web.php` and add inside the `auth` middleware group:
+     - `Volt::route('categories', 'categories.index')->name('categories.index');`
+     - `Volt::route('categories/{category}/edit', 'categories.edit')->name('categories.edit');`
+   - Update layouts/navigation if necessary to point the "Categories" navigation menu to the index page instead of direct creation.
+
+6. **Testing & QA:**
+   - Create `tests/Feature/Pages/Categories/CategoryManagementTest.php` covering:
+     - Redirection of guests, access of authorized users.
+     - Correct rendering of categories list.
+     - Deletion action: database has soft-deleted category, `deleted_by` is set correctly, and success flash message is rendered.
+   - Create `tests/Feature/Pages/Categories/EditCategoryTest.php` covering:
+     - Route accessibility.
+     - Validations and unique constraint checks.
+     - Successful update with correct `updated_by` attribute.
+     - Correct rendering of belonging medicines.
 
 ## Decisions
 
-- **Dynamic Request Passing in Volt** — Since Volt components compile into standard Livewire components, passing `$this->category->id` into `UpdateCategoryRequest::rules` manually during execution allows us to utilize Laravel's powerful `FormRequest` validation rules while keeping Livewire reactive binding working cleanly.
-- **Displaying Affected Medicines** — Displaying the medicines directly on the edit page meets the requirement of showing the user which products are affected. The medicines will be fetched via the Eloquent `$category->medicines` relationship.
+- **Index as the Main Entry Point** — The "Categories" link in the main navigation sidebar should point to `/categories` (Index page) rather than `/categories/create`. This acts as the command center for category operations.
+- **Soft Deleting from Index** — Implementing deletion directly in the index table with a standard confirmation dialog provides a clean user experience and respects the DB structure.
 
 ## Risks
 
-- **Concurrent Modification** — If another user changes the category name to a name that was recently occupied, standard database unique index might raise errors.
-  - _Mitigation:_ The uniqueness rule includes the `whereNull('deleted_at')` filter, matching the DB structure and ensuring the user gets a friendly error instead of a database crash.
-- **SQL Integrity Errors with Soft Deletes** — Because the database has a unique index on `name` without taking `deleted_at` into account, trying to rename a category to a name that belongs to a soft-deleted category will cause a database-level integrity error.
-  - _Mitigation:_ The `UpdateCategoryRequest` rule will check uniqueness across all categories, or we will handle database constraint validation. Since the database unique index is on `name` only, we must validate uniqueness against all rows (including soft deleted) to prevent DB 500 errors, even though the HU specifies "otro registro activo". We will add a fallback validation or catch `UniqueConstraintViolationException` during save to give a clean message.
+- **SQL Integrity Errors on Rename/Recreate** — If a user tries to rename a category to a name that matches a soft-deleted category, the unique index on `categories.name` will throw an SQL constraint error.
+  - _Mitigation:_ We will validate unique constraints against all categories, or catch the exception, informing the user.
