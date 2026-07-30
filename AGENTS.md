@@ -10,6 +10,7 @@ Management system for pharmaceutical distributor and traceability
 - Livewire 3.6.4
 - MySQL 8.0
 - Pestphp 4.7
+- PNPM v10.33.2
 
 ## Comandos
 
