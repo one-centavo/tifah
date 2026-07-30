@@ -16,26 +16,23 @@ class SanitaryRegistryService
      */
     public function create(array $data): SanitaryRegistry
     {
+        $data['registration_number'] = strtoupper(trim($data['registration_number']));
         $data['created_by'] = auth()->id();
-        if (isset($data['registration_number'])) {
-            $data['registration_number'] = strtoupper(preg_replace('/\s+/', ' ', trim($data['registration_number'])));
-        }
 
         return SanitaryRegistry::create($data);
     }
 
     /**
-     * Update an existing sanitary registry and assign the updater.
+     * Update an existing sanitary registry.
      *
      * @param  array<string, mixed>  $data
      */
     public function update(SanitaryRegistry $registry, array $data): SanitaryRegistry
     {
-        $data['updated_by'] = auth()->id();
         if (isset($data['registration_number'])) {
-            $data['registration_number'] = strtoupper(preg_replace('/\s+/', ' ', trim($data['registration_number'])));
+            $data['registration_number'] = strtoupper(trim($data['registration_number']));
         }
-
+        $data['updated_by'] = auth()->id();
         $registry->update($data);
 
         return $registry;
@@ -48,7 +45,7 @@ class SanitaryRegistryService
     {
         if ($registry->medicines()->exists()) {
             throw ValidationException::withMessages([
-                'registry' => 'No se puede eliminar el registro sanitario porque tiene medicamentos activos asociados.',
+                'sanitary_registry' => 'No se puede eliminar el registro sanitario porque tiene medicamentos activos asociados.',
             ]);
         }
 
