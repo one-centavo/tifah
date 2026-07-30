@@ -4,11 +4,11 @@
 
 ## What it does
 
-Allows authorized users (Administrators or Warehouse Assistants) to register and manage the catalog of Sanitary Registries (INVIMA). This ensures all medicines comply with health regulations and facilitates tracking of expirations. The feature covers form registration, automatic data normalization, audit logging, soft deletes with association constraints, and status-based selection restrictions in medicine registration.
+Allows authorized users (Administrators or Warehouse Assistants) to register and manage the catalog of Sanitary Registries (INVIMA). This ensures all medicines comply with health regulations and facilitates tracking of expirations. The feature covers form registration, automatic data normalization, audit logging, soft deletes with association constraints, status-based selection restrictions in medicine registration, and quick laboratory registration from within the form.
 
 ## Why
 
-To comply with health regulations, ensure only valid sanitary registries are assigned to active medicines, and prevent expired products from being sold or used.
+To comply with health regulations, ensure only valid sanitary registries are assigned to active medicines, prevent expired products from being sold or used, and streamline data entry when registering new manufacturer laboratories on the fly.
 
 ## Acceptance criteria
 
@@ -53,6 +53,14 @@ To comply with health regulations, ensure only valid sanitary registries are ass
   - It must no longer appear in active lists or selection dropdowns.
   - It remains in the database for auditing/historical records, recording `deleted_at` and `deleted_by` (the ID of the user who deleted it).
 - **Deletion Constraint**: Prevent soft deletion of a sanitary registry if it is associated with active products (medicines) in the catalog. If associated active medicines exist, block deletion and display an error.
+
+### 7. Quick Laboratory Registration
+- If a manufacturer laboratory is not found in the database, the system must allow registering it quickly via a modal form without leaving the Sanitary Registry flow.
+- A link or button like `"+ Registrar Laboratorio"` should be available within or next to the search dropdown.
+- This opens a modal with:
+  - **Nombre del Laboratorio** (prefilled with the current search query, required, unique, maximum 255 characters).
+  - **Descripción** (optional, maximum 255 characters).
+- Upon successful submission, create the laboratory, automatically select it in the form, close the modal, and show a success confirmation.
 
 ## Out of scope
 - Bulk importing sanitary registry lists from external files.

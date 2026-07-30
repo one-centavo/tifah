@@ -33,6 +33,14 @@ We will implement the registration, validation, search/filtering, and soft delet
   - Error highlighting for invalid fields.
   - Normalization to uppercase input.
   - Session success flash messaging and redirection.
+  - **Quick Laboratory Registration Modal**:
+    - Include a modal component `<x-modal name="quick-laboratory-creation">` inside the view.
+    - If search yields no results or the user clicks `"+ Registrar Laboratorio"`, open the modal.
+    - Modal form fields: `quickLabName` (binds search input query) and `quickLabDescription`.
+    - Implement `saveQuickLaboratory(LaboratoryService $laboratoryService)` which:
+      - Validates the new laboratory's fields (required, unique, length).
+      - Registers the laboratory via `LaboratoryService`.
+      - Automatically sets `laboratory_id` to the newly created laboratory, pre-selects it, closes the modal, and flashes a success message.
 - **Index Component** (`resources/views/livewire/sanitary-registries/index.blade.php`):
   - Table showing: registration number, laboratory name, expiration date, status (color-coded badge), description.
   - Search by registration number.
@@ -56,6 +64,10 @@ We will implement the registration, validation, search/filtering, and soft delet
     - Validation checks for unique constraint, regex matching, and future date.
     - Check registration number normalization to uppercase.
     - Check automatic audit fields (`created_by`, `created_at`).
+    - **Quick Laboratory Registration Tests**:
+      - Opening modal pre-populates the laboratory name with the current search query.
+      - Fails if the laboratory name is empty or duplicate.
+      - Succeeds, persists the laboratory in the database, automatically selects it in the form, and closes the modal.
   - `tests/Feature/Pages/SanitaryRegistries/SanitaryRegistryManagementTest.php`:
     - Display list with correct filters.
     - Search by number and filter by status.
