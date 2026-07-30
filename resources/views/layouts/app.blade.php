@@ -327,8 +327,9 @@
                         </a>
                     </li>
                     <li>
-                        <a href="#"
-                            class="flex items-center p-2 text-base font-medium text-gray-900 rounded-lg hover:bg-gray-100 group">
+                        <a href="{{ route('categories.create') }}"
+                            class="flex items-center p-2 text-base font-medium text-gray-900 rounded-lg hover:bg-gray-100 group"
+                            wire:navigate>
                             <x-tabler-category
                                 class="w-6 h-6 text-gray-500 transition duration-75 group-hover:text-gray-900" />
                             <span class="ml-3">Categorias</span>

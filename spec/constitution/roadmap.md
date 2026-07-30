@@ -6,14 +6,11 @@ _Orden y estado de las features. Es la vista de "qué hay hecho, qué toca ahora
 
 _Features completadas, en orden de implementación._
 
-1. **NNN · <Nombre>** — <una línea de qué resuelve>.
-2. **NNN · <Nombre>** — <una línea de qué resuelve>.
+1. **001 · Create Category** — Permite el registro de nuevas categorías de productos configurando restricciones logísticas por defecto.
 
 ## Siguiente 🔜
 
 _Lo próximo a abordar. Idealmente una sola feature "en curso" a la vez._
-
-3. **NNN · <Nombre>** — <una línea de qué resuelve>.
 
 ## Backlog / ideas 💡
 
