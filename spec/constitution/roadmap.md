@@ -10,6 +10,7 @@ _Features completadas, en orden de implementación._
 2. **002 · Edit Category & Category Management** — Allows managing and editing medicine categories, soft deleting records, and displaying affected medicines.
 3. **003 · Show and Filter Categories** — Provides comprehensive search, filter, and sort capabilities on the Category Management dashboard.
 4. **004 · Delete Category** — Allows authorized users to soft delete medicine categories after verifying that no active medicines are associated with them.
+5. **006 · Edit Laboratory** — Permite la edición de la información de laboratorios previamente registrados, garantizando la validación de unicidad en registros activos y la trazabilidad de las modificaciones.
 
 ## Siguiente 🔜
 

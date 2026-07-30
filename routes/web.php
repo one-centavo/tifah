@@ -20,6 +20,7 @@ Route::middleware(['auth'])->group(function () {
 
     Volt::route('laboratories', 'laboratories.index')->name('laboratories.index');
     Volt::route('laboratories/create', 'laboratories.create')->name('laboratories.create');
+    Volt::route('laboratories/{laboratory}/edit', 'laboratories.edit')->name('laboratories.edit');
 });
 
 require __DIR__.'/auth.php';
