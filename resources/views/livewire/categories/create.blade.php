@@ -24,6 +24,16 @@ new #[Layout('layouts.app')] class extends Component {
     }
 
     /**
+     * Get the custom validation error messages.
+     *
+     * @return array<string, string>
+     */
+    protected function messages(): array
+    {
+        return (new StoreCategoryRequest())->messages();
+    }
+
+    /**
      * Create the category and reset the form.
      */
     public function save(CategoryService $categoryService): void
