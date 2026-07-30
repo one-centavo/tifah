@@ -49,6 +49,17 @@ new #[Layout('layouts.app')] class extends Component {
 }; ?>
 
 <div class="max-w-2xl mx-auto py-8">
+    <!-- Header/Back Navigation -->
+    <div class="mb-6 flex items-center justify-between">
+        <a href="{{ route('categories.index') }}" wire:navigate
+            class="inline-flex items-center text-sm font-medium text-slate-600 hover:text-blue-900 transition-colors gap-1.5">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18"></path>
+            </svg>
+            <span>Volver a Categorías</span>
+        </a>
+    </div>
+
     <!-- Header -->
     <div class="mb-6">
         <h1 class="text-2xl font-bold text-blue-900 dark:text-white">Nueva Categoría</h1>
