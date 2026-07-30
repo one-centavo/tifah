@@ -1,4 +1,4 @@
-# 008 · Create Sanitary Register & Sanitary Register Management — Plan
+# 009 · Create Sanitary Register & Sanitary Register Management — Plan
 
 ## Approach
 
