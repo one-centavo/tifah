@@ -1,6 +1,6 @@
 # 006 · Edit Laboratory
 
-**Status:** Draft
+**Status:** Completed
 
 ## What it does
 

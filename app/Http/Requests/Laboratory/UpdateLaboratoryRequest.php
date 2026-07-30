@@ -21,7 +21,7 @@ class UpdateLaboratoryRequest extends LaboratoryRequestBase
                     'required',
                     'string',
                     'max:255',
-                    Rule::unique('laboratories', 'name')->ignore($ignoreId)->whereNull('deleted_at'),
+                    Rule::unique('laboratories', 'name')->ignore($ignoreId),
                 ],
             ],
             $this->commonRules()
