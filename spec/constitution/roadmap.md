@@ -12,6 +12,9 @@ _Features completadas, en orden de implementación._
 
 _Lo próximo a abordar. Idealmente una sola feature "en curso" a la vez._
 
+1. **002 · Edit Category** (In Progress) — Allows editing an existing medicine category and lists the affected medicines.
+
+
 ## Backlog / ideas 💡
 
 _Sin comprometer ni ordenar del todo. Ideas que respetan la constitución._
