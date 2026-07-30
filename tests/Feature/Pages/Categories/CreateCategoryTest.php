@@ -33,7 +33,7 @@ test('it validates name is required', function () {
 
     $component
         ->assertHasErrors(['name' => 'required'])
-        ->assertSee('El campo nombre es obligatorio.');
+        ->assertSee('El nombre de la categoría es obligatorio.');
 });
 
 test('it validates name is at least 3 characters', function () {
@@ -47,7 +47,7 @@ test('it validates name is at least 3 characters', function () {
 
     $component
         ->assertHasErrors(['name' => 'min'])
-        ->assertSee('El campo nombre debe tener al menos 3 caracteres.');
+        ->assertSee('El nombre de la categoría debe tener al menos 3 caracteres.');
 });
 
 test('it validates name is maximum 50 characters', function () {
@@ -61,7 +61,7 @@ test('it validates name is maximum 50 characters', function () {
 
     $component
         ->assertHasErrors(['name' => 'max'])
-        ->assertSee('El campo nombre no debe tener más de 50 caracteres.');
+        ->assertSee('El nombre de la categoría no debe exceder los 50 caracteres.');
 });
 
 test('it validates name is unique in database', function () {
@@ -76,7 +76,7 @@ test('it validates name is unique in database', function () {
 
     $component
         ->assertHasErrors(['name' => 'unique'])
-        ->assertSee('El campo nombre ya está en uso.');
+        ->assertSee('El nombre de la categoría ya se encuentra registrado.');
 });
 
 test('it validates description does not exceed 255 characters', function () {
@@ -91,7 +91,7 @@ test('it validates description does not exceed 255 characters', function () {
 
     $component
         ->assertHasErrors(['description' => 'max'])
-        ->assertSee('El campo descripción no debe tener más de 255 caracteres.');
+        ->assertSee('La descripción no debe exceder los 255 caracteres.');
 });
 
 test('it successfully creates a category with valid data and resets form', function () {
