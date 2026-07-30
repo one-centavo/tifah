@@ -161,3 +161,65 @@ test('it successfully creates a sanitary registry, normalizes number to uppercas
 
     expect(session('success'))->toBe('El registro sanitario ha sido registrado con éxito.');
 });
+
+test('it validates quick laboratory name is required', function () {
+    $user = User::factory()->create();
+
+    $this->actingAs($user);
+
+    $component = Volt::test('sanitary-registries.create')
+        ->set('quickLabName', '')
+        ->call('saveQuickLaboratory');
+
+    $component
+        ->assertHasErrors(['quickLabName' => 'required'])
+        ->assertSee('El nombre del laboratorio es obligatorio.');
+});
+
+test('it validates quick laboratory name is unique', function () {
+    $user = User::factory()->create();
+    Laboratory::factory()->create(['name' => 'Laboratorio Existente']);
+
+    $this->actingAs($user);
+
+    $component = Volt::test('sanitary-registries.create')
+        ->set('quickLabName', 'Laboratorio Existente')
+        ->call('saveQuickLaboratory');
+
+    $component
+        ->assertHasErrors(['quickLabName' => 'unique'])
+        ->assertSee('Este laboratorio ya se encuentra registrado.');
+});
+
+test('it successfully creates a quick laboratory and selects it in the form', function () {
+    $user = User::factory()->create();
+
+    $this->actingAs($user);
+
+    $component = Volt::test('sanitary-registries.create')
+        ->set('laboratorySearch', 'Nuevo Laboratorio')
+        ->call('openQuickLabModal');
+
+    // Should prefill the laboratory name with the current search query
+    expect($component->get('quickLabName'))->toBe('Nuevo Laboratorio');
+
+    $component->set('quickLabDescription', 'Descripción rápida del laboratorio.')
+        ->call('saveQuickLaboratory');
+
+    $component->assertHasNoErrors();
+
+    // Verify it is created in database
+    $this->assertDatabaseHas('laboratories', [
+        'name' => 'Nuevo Laboratorio',
+        'description' => 'Descripción rápida del laboratorio.',
+        'created_by' => $user->id,
+    ]);
+
+    // Verify it is selected in the component
+    $lab = Laboratory::where('name', 'Nuevo Laboratorio')->first();
+    expect($component->get('laboratory_id'))->toBe($lab->id)
+        ->and($component->get('laboratorySearch'))->toBe('Nuevo Laboratorio')
+        ->and($component->get('showLaboratoriesDropdown'))->toBeFalse();
+
+    $component->assertSee('El laboratorio ha sido registrado y seleccionado con éxito.');
+});
