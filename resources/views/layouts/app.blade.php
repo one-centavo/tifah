@@ -353,8 +353,9 @@
                         </a>
                     </li>
                     <li>
-                        <a href="#"
-                            class="flex items-center p-2 border-l-4 text-base font-medium transition-all duration-150 ease-in-out group {{ $registriesActive ? 'bg-blue-50 text-blue-900 border-blue-900 font-semibold rounded-r-lg' : 'text-gray-900 border-transparent hover:bg-gray-100 rounded-lg' }}">
+                        <a href="{{ route('sanitary-registries.index') }}"
+                            class="flex items-center p-2 border-l-4 text-base font-medium transition-all duration-150 ease-in-out group {{ $registriesActive ? 'bg-blue-50 text-blue-900 border-blue-900 font-semibold rounded-r-lg' : 'text-gray-900 border-transparent hover:bg-gray-100 rounded-lg' }}"
+                            wire:navigate>
                             <x-tabler-file-check
                                 class="w-6 h-6 transition duration-75 {{ $registriesActive ? 'text-blue-900' : 'text-gray-500 group-hover:text-gray-900' }}" />
                             <span class="ml-3">Registros Sanitarios</span>
