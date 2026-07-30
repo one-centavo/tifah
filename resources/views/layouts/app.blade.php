@@ -327,7 +327,7 @@
                         </a>
                     </li>
                     <li>
-                        <a href="{{ route('categories.create') }}"
+                        <a href="{{ route('categories.index') }}"
                             class="flex items-center p-2 text-base font-medium text-gray-900 rounded-lg hover:bg-gray-100 group"
                             wire:navigate>
                             <x-tabler-category

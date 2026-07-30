@@ -19,7 +19,8 @@ test('authorized users can access category creation page', function () {
 
     $response
         ->assertOk()
-        ->assertSeeVolt('categories.create');
+        ->assertSeeVolt('categories.create')
+        ->assertSee(route('categories.index'));
 });
 
 test('it validates name is required', function () {

@@ -7,10 +7,12 @@ _Orden y estado de las features. Es la vista de "qué hay hecho, qué toca ahora
 _Features completadas, en orden de implementación._
 
 1. **001 · Create Category** — Permite el registro de nuevas categorías de productos configurando restricciones logísticas por defecto.
+2. **002 · Edit Category & Category Management** — Allows managing and editing medicine categories, soft deleting records, and displaying affected medicines.
 
 ## Siguiente 🔜
 
 _Lo próximo a abordar. Idealmente una sola feature "en curso" a la vez._
+
 
 ## Backlog / ideas 💡
 
