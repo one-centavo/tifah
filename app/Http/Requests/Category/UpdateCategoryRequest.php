@@ -22,7 +22,7 @@ class UpdateCategoryRequest extends CategoryRequestBase
                     'string',
                     'min:3',
                     'max:50',
-                    Rule::unique('categories', 'name')->ignore($ignoreId)->whereNull('deleted_at'),
+                    Rule::unique('categories', 'name')->ignore($ignoreId),
                 ],
             ],
             $this->commonRules()
