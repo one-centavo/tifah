@@ -41,4 +41,13 @@ class CategoryService
         $category->update(['deleted_by' => auth()->id()]);
         $category->delete();
     }
+
+    /**
+     * Restore a soft-deleted category and clear the deleted_by field.
+     */
+    public function restore(Category $category): void
+    {
+        $category->update(['deleted_by' => null]);
+        $category->restore();
+    }
 }
