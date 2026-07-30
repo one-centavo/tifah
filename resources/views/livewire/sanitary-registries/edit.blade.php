@@ -6,6 +6,7 @@ use Livewire\Volt\Component;
 use Livewire\Attributes\Layout;
 use App\Models\Laboratory;
 use App\Models\SanitaryRegistry;
+use App\Services\LaboratoryService;
 use App\Services\SanitaryRegistryService;
 use App\Http\Requests\SanitaryRegistry\UpdateSanitaryRegistryRequest;
 
@@ -21,6 +22,10 @@ new #[Layout('layouts.app')] class extends Component {
     // Search and select laboratory state
     public string $laboratorySearch = '';
     public bool $showLaboratoriesDropdown = false;
+
+    // Quick laboratory creation state
+    public string $quickLabName = '';
+    public string $quickLabDescription = '';
 
     /**
      * Initialize the component with model data.
@@ -70,6 +75,45 @@ new #[Layout('layouts.app')] class extends Component {
         $this->laboratorySearch = $name;
         $this->showLaboratoriesDropdown = false;
         $this->resetErrorBag('laboratory_id');
+    }
+
+    /**
+     * Open quick laboratory creation modal.
+     */
+    public function openQuickLabModal(): void
+    {
+        $this->quickLabName = trim($this->laboratorySearch);
+        $this->quickLabDescription = '';
+        $this->resetErrorBag(['quickLabName', 'quickLabDescription']);
+        $this->showLaboratoriesDropdown = false;
+        $this->dispatch('open-modal', 'quick-laboratory-modal');
+    }
+
+    /**
+     * Save the quick laboratory and select it.
+     */
+    public function saveQuickLaboratory(LaboratoryService $laboratoryService): void
+    {
+        $this->validate([
+            'quickLabName' => ['required', 'string', 'max:255', 'unique:laboratories,name'],
+            'quickLabDescription' => ['nullable', 'string', 'max:255'],
+        ], [
+            'quickLabName.required' => 'El nombre del laboratorio es obligatorio.',
+            'quickLabName.unique' => 'Este laboratorio ya se encuentra registrado.',
+            'quickLabName.max' => 'El nombre del laboratorio no debe exceder los 255 caracteres.',
+            'quickLabDescription.max' => 'La descripción no debe exceder los 255 caracteres.',
+        ]);
+
+        $laboratory = $laboratoryService->create([
+            'name' => $this->quickLabName,
+            'description' => $this->quickLabDescription,
+        ]);
+
+        $this->selectLaboratory($laboratory->id, $laboratory->name);
+        $this->dispatch('close-modal', 'quick-laboratory-modal');
+        $this->reset(['quickLabName', 'quickLabDescription']);
+
+        session()->flash('success_quick_lab', 'El laboratorio ha sido registrado y seleccionado con éxito.');
     }
 
     /**
@@ -126,6 +170,16 @@ new #[Layout('layouts.app')] class extends Component {
         </p>
     </div>
 
+    <!-- Quick Lab Alert Success -->
+    @if (session()->has('success_quick_lab'))
+        <div class="mb-6 p-4 bg-lime-50 border border-lime-200 text-lime-800 rounded-xl flex items-center shadow-sm animate-pulse" role="alert">
+            <svg class="w-5 h-5 mr-2 text-lime-600 shrink-0" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+            </svg>
+            <span class="font-medium">{{ session('success_quick_lab') }}</span>
+        </div>
+    @endif
+
     <!-- Card Form -->
     <div class="bg-white border border-slate-100 shadow-sm rounded-2xl p-6 md:p-8">
         <form wire:submit="save" class="space-y-6">
@@ -155,22 +209,32 @@ new #[Layout('layouts.app')] class extends Component {
                 </div>
 
                 <!-- Dropdown List -->
-                @if($showLaboratoriesDropdown && count($filteredLaboratories) > 0)
-                    <div class="absolute z-10 w-full mt-1 bg-white border border-slate-200 rounded-xl shadow-lg max-h-60 overflow-y-auto">
-                        <ul class="divide-y divide-slate-100">
-                            @foreach($filteredLaboratories as $lab)
-                                <li>
-                                    <button type="button" wire:click="selectLaboratory({{ $lab->id }}, '{{ addslashes($lab->name) }}')"
-                                        class="w-full px-4 py-3 text-left text-sm text-slate-700 hover:bg-slate-50 transition-colors font-medium">
-                                        {{ $lab->name }}
-                                    </button>
-                                </li>
-                            @endforeach
-                        </ul>
-                    </div>
-                @elseif($showLaboratoriesDropdown && !empty(trim($laboratorySearch)))
-                    <div class="absolute z-10 w-full mt-1 bg-white border border-slate-200 rounded-xl shadow-lg p-4 text-center text-sm text-slate-500">
-                        No se encontraron laboratorios que coincidan con la búsqueda.
+                @if($showLaboratoriesDropdown)
+                    <div class="absolute z-10 w-full mt-1 bg-white border border-slate-200 rounded-xl shadow-lg overflow-hidden">
+                        @if(count($filteredLaboratories) > 0)
+                            <ul class="divide-y divide-slate-100 max-h-48 overflow-y-auto">
+                                @foreach($filteredLaboratories as $lab)
+                                    <li>
+                                        <button type="button" wire:click="selectLaboratory({{ $lab->id }}, '{{ addslashes($lab->name) }}')"
+                                            class="w-full px-4 py-3 text-left text-sm text-slate-700 hover:bg-slate-50 transition-colors font-medium">
+                                            {{ $lab->name }}
+                                        </button>
+                                    </li>
+                                @endforeach
+                            </ul>
+                        @else
+                            <div class="p-4 text-center text-sm text-slate-500">
+                                No se encontraron laboratorios.
+                            </div>
+                        @endif
+
+                        <div class="px-4 py-3 bg-slate-50 border-t border-slate-100 flex items-center justify-between">
+                            <span class="text-xs text-slate-500">¿No encuentras el laboratorio?</span>
+                            <button type="button" wire:click="openQuickLabModal" 
+                                class="text-xs font-bold text-blue-900 hover:text-lime-600 transition-colors cursor-pointer">
+                                + Registrar Nuevo
+                            </button>
+                        </div>
                     </div>
                 @endif
                 
@@ -217,4 +281,44 @@ new #[Layout('layouts.app')] class extends Component {
             </div>
         </form>
     </div>
+
+    <!-- Quick Laboratory Creation Modal -->
+    <x-modal name="quick-laboratory-modal" focusable>
+        <div class="p-6">
+            <h2 class="text-lg font-bold text-blue-900">
+                Registro Rápido de Laboratorio
+            </h2>
+            <p class="mt-2 text-sm text-slate-600 font-normal">
+                Registra rápidamente el nuevo laboratorio fabricante. Una vez guardado, se seleccionará automáticamente.
+            </p>
+
+            <form wire:submit.prevent="saveQuickLaboratory" class="mt-4 space-y-4">
+                <!-- Name -->
+                <div>
+                    <x-input-label for="quickLabName" value="Nombre del Laboratorio" class="text-blue-900 font-semibold mb-1" />
+                    <x-text-input wire:model="quickLabName" id="quickLabName" type="text" class="block w-full mt-1" required />
+                    <x-input-error :messages="$errors->get('quickLabName')" class="mt-1" />
+                </div>
+
+                <!-- Description -->
+                <div>
+                    <x-input-label for="quickLabDescription" value="Descripción (Opcional)" class="text-blue-900 font-semibold mb-1" />
+                    <textarea wire:model="quickLabDescription" id="quickLabDescription" rows="3" 
+                        class="border-slate-100 bg-slate-50 text-blue-900 focus:border-lime-500 focus:ring-lime-500 rounded-md shadow-sm block w-full mt-1 p-3 text-sm" 
+                        placeholder="Descripción opcional..."></textarea>
+                    <x-input-error :messages="$errors->get('quickLabDescription')" class="mt-1" />
+                </div>
+
+                <div class="mt-6 flex justify-end gap-3 border-t border-slate-100 pt-4">
+                    <x-secondary-button x-on:click="$dispatch('close')" class="cursor-pointer">
+                        Cancelar
+                    </x-secondary-button>
+
+                    <x-primary-button type="submit" class="bg-blue-900 hover:bg-lime-500 hover:text-blue-950 text-white font-medium px-6 py-2.5 rounded-lg shadow-sm transition cursor-pointer">
+                        Registrar y Seleccionar
+                    </x-primary-button>
+                </div>
+            </form>
+        </div>
+    </x-modal>
 </div>
