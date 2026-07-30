@@ -20,8 +20,8 @@ Management system for pharmaceutical distributor and traceability
 
 ## Project Estructure
 
-- `app/services/` - Contains the bussiness logic
-- `resources/views/livewire` Contains the liveiwire components, whith act as controllers and view
+- `app/services/` - Responsible for the business logic/rules, orchestration, and persistence, separating business logic from the UI.
+- `resources/views/livewire` - Livewire Volt components act as controllers, which validate input, manage reactive form states, and invoke the services layer to execute business rules.
 
 ## Conventions
 
