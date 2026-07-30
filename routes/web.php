@@ -14,7 +14,9 @@ Route::view('profile', 'profile')
     ->name('profile');
 
 Route::middleware(['auth'])->group(function () {
+    Volt::route('categories', 'categories.index')->name('categories.index');
     Volt::route('categories/create', 'categories.create')->name('categories.create');
+    Volt::route('categories/{category}/edit', 'categories.edit')->name('categories.edit');
 });
 
 require __DIR__.'/auth.php';
