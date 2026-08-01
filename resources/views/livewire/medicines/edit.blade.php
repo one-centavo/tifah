@@ -495,14 +495,14 @@ new #[Layout('layouts.app')] class extends Component {
                     <!-- Commercial Name -->
                     <div>
                         <x-input-label for="name" value="Nombre Comercial" class="text-blue-900 font-semibold mb-1" />
-                        <x-text-input wire:model="name" id="name" type="text" class="block w-full mt-1 disabled:bg-slate-100 disabled:text-slate-500" placeholder="Ej. Acetaminofén MK" @disabled($isMasterDataReadOnly) required />
+                        <x-text-input wire:model="name" id="name" type="text" class="block w-full mt-1 disabled:bg-slate-100 disabled:text-slate-500" placeholder="Ej. Acetaminofén MK" :disabled="$isMasterDataReadOnly" required />
                         <x-input-error :messages="$errors->get('name')" class="mt-2" />
                     </div>
 
                     <!-- Generic Name -->
                     <div>
                         <x-input-label for="generic_name" value="Nombre Genérico / Principio Activo" class="text-blue-900 font-semibold mb-1" />
-                        <x-text-input wire:model="generic_name" id="generic_name" type="text" class="block w-full mt-1 disabled:bg-slate-100 disabled:text-slate-500" placeholder="Ej. Acetaminofén" @disabled($isMasterDataReadOnly) />
+                        <x-text-input wire:model="generic_name" id="generic_name" type="text" class="block w-full mt-1 disabled:bg-slate-100 disabled:text-slate-500" placeholder="Ej. Acetaminofén" :disabled="$isMasterDataReadOnly" />
                         <x-input-error :messages="$errors->get('generic_name')" class="mt-2" />
                     </div>
 
@@ -599,7 +599,7 @@ new #[Layout('layouts.app')] class extends Component {
                     <!-- Concentration Value -->
                     <div>
                         <x-input-label for="concentration_value" value="Valor de Concentración" class="text-blue-900 font-semibold mb-1" />
-                        <x-text-input wire:model="concentration_value" id="concentration_value" type="number" step="0.01" class="block w-full mt-1 disabled:bg-slate-100 disabled:text-slate-500" placeholder="Ej. 500" @disabled($isMasterDataReadOnly) required />
+                        <x-text-input wire:model="concentration_value" id="concentration_value" type="number" step="0.01" class="block w-full mt-1 disabled:bg-slate-100 disabled:text-slate-500" placeholder="Ej. 500" :disabled="$isMasterDataReadOnly" required />
                         <x-input-error :messages="$errors->get('concentration_value')" class="mt-2" />
                     </div>
 
@@ -632,7 +632,7 @@ new #[Layout('layouts.app')] class extends Component {
                     <!-- Content Quantity -->
                     <div>
                         <x-input-label for="content_quantity" value="Cantidad de Contenido" class="text-blue-900 font-semibold mb-1" />
-                        <x-text-input wire:model="content_quantity" id="content_quantity" type="number" class="block w-full mt-1 disabled:bg-slate-100 disabled:text-slate-500" placeholder="Ej. 30" @disabled($isMasterDataReadOnly) required />
+                        <x-text-input wire:model="content_quantity" id="content_quantity" type="number" class="block w-full mt-1 disabled:bg-slate-100 disabled:text-slate-500" placeholder="Ej. 30" :disabled="$isMasterDataReadOnly" required />
                         <x-input-error :messages="$errors->get('content_quantity')" class="mt-2" />
                     </div>
 
@@ -664,7 +664,7 @@ new #[Layout('layouts.app')] class extends Component {
                                 class="block w-full mt-1 disabled:bg-slate-100 disabled:text-slate-500" 
                                 placeholder="Escriba para buscar laboratorio..." 
                                 @focus="labDropdown = true" 
-                                @disabled($isMasterDataReadOnly) required />
+                                :disabled="$isMasterDataReadOnly" required />
                             
                             @if($laboratory_id && !$isMasterDataReadOnly)
                                 <span class="absolute inset-y-0 right-0 pr-3 flex items-center text-lime-600">
@@ -717,7 +717,7 @@ new #[Layout('layouts.app')] class extends Component {
                                 class="block w-full mt-1 disabled:bg-slate-100 disabled:text-slate-500" 
                                 placeholder="Escriba para buscar registro INVIMA..." 
                                 @focus="regDropdown = true" 
-                                @disabled($isMasterDataReadOnly) required />
+                                :disabled="$isMasterDataReadOnly" required />
                             
                             @if($sanitary_registry_id && !$isMasterDataReadOnly)
                                 <span class="absolute inset-y-0 right-0 pr-3 flex items-center text-lime-600">
