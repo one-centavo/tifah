@@ -25,6 +25,9 @@ Route::middleware(['auth'])->group(function () {
     Volt::route('sanitary-registries', 'sanitary-registries.index')->name('sanitary-registries.index');
     Volt::route('sanitary-registries/create', 'sanitary-registries.create')->name('sanitary-registries.create');
     Volt::route('sanitary-registries/{sanitary_registry}/edit', 'sanitary-registries.edit')->name('sanitary-registries.edit');
+
+    Volt::route('medicines', 'medicines.index')->name('medicines.index');
+    Volt::route('medicines/create', 'medicines.create')->name('medicines.create');
 });
 
 require __DIR__.'/auth.php';
