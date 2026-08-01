@@ -3,8 +3,11 @@
 declare(strict_types=1);
 
 use App\Models\Category;
+use App\Models\Lot;
 use App\Models\Medicine;
 use App\Models\MedicineBarcode;
+use App\Models\PurchaseOrder;
+use App\Models\Supplier;
 use App\Models\User;
 use Livewire\Volt\Volt;
 
@@ -119,4 +122,137 @@ test('it can soft delete a medicine and record deleter and delete related barcod
     Volt::test('medicines.index')
         ->set('softDeleteFilter', 'archived')
         ->assertSee('Rivotril');
+});
+
+test('it displays the total stock and show warning badge if stock is equal or below minimum', function () {
+    $user = User::factory()->create();
+    $this->actingAs($user);
+
+    $supplier = Supplier::create([
+        'nit' => '12345678-9',
+        'dv' => 1,
+        'name' => 'Supplier Test',
+        'contact_person' => 'John Doe',
+        'phone_number' => '1234567',
+        'email' => 'supplier@test.com',
+        'address' => 'Test address',
+        'created_by' => $user->id,
+    ]);
+    $purchaseOrder = PurchaseOrder::create([
+        'supplier_id' => $supplier->id,
+        'status' => 'pending',
+        'expected_date' => now()->addDays(5)->toDateString(),
+        'total_estimated' => 100.00,
+        'created_by' => $user->id,
+    ]);
+
+    // Medicine 1: Stock is below minimum -> Show alert
+    $medicineBelow = Medicine::factory()->create([
+        'name' => 'Medicine Below',
+        'min_stock' => 10,
+    ]);
+    Lot::create([
+        'medicine_id' => $medicineBelow->id,
+        'purchase_order_id' => $purchaseOrder->id,
+        'batch_number' => 'LOT001',
+        'expiration_date' => now()->addYear(),
+        'current_quantity' => 5,
+        'initial_quantity' => 10,
+        'reception_date' => now(),
+        'unit_purchase_price' => 50.0,
+        'status' => 'active',
+        'created_by' => $user->id,
+    ]);
+
+    // Medicine 2: Stock is above minimum -> No alert
+    $medicineAbove = Medicine::factory()->create([
+        'name' => 'Medicine Above',
+        'min_stock' => 10,
+    ]);
+    Lot::create([
+        'medicine_id' => $medicineAbove->id,
+        'purchase_order_id' => $purchaseOrder->id,
+        'batch_number' => 'LOT002',
+        'expiration_date' => now()->addYear(),
+        'current_quantity' => 15,
+        'initial_quantity' => 20,
+        'reception_date' => now(),
+        'unit_purchase_price' => 50.0,
+        'status' => 'active',
+        'created_by' => $user->id,
+    ]);
+
+    Volt::test('medicines.index')
+        ->assertSee('Medicine Below')
+        ->assertSee('Medicine Above')
+        ->assertSee('5')
+        ->assertSee('15')
+        ->assertSee('Alerta');
+});
+
+test('it can load technical details inside the detail modal', function () {
+    $user = User::factory()->create();
+    $this->actingAs($user);
+
+    $medicine = Medicine::factory()->create([
+        'name' => 'Test Detail Medicine',
+        'generic_name' => 'Test Generic Active',
+        'concentration_value' => 500.00,
+        'selling_price' => 15000.00,
+        'description' => 'This is a description test for the modal detail.',
+    ]);
+
+    Volt::test('medicines.index')
+        ->call('viewDetails', $medicine->id)
+        ->assertSet('selectedMedicineId', $medicine->id)
+        ->assertSee('Test Detail Medicine')
+        ->assertSee('Test Generic Active')
+        ->assertSee('This is a description test for the modal detail.');
+});
+
+test('it prevents soft deletion of a medicine with active lots', function () {
+    $user = User::factory()->create();
+    $this->actingAs($user);
+
+    $supplier = Supplier::create([
+        'nit' => '12345678-9',
+        'dv' => 1,
+        'name' => 'Supplier Test',
+        'contact_person' => 'John Doe',
+        'phone_number' => '1234567',
+        'email' => 'supplier@test.com',
+        'address' => 'Test address',
+        'created_by' => $user->id,
+    ]);
+    $purchaseOrder = PurchaseOrder::create([
+        'supplier_id' => $supplier->id,
+        'status' => 'pending',
+        'expected_date' => now()->addDays(5)->toDateString(),
+        'total_estimated' => 100.00,
+        'created_by' => $user->id,
+    ]);
+
+    $medicine = Medicine::factory()->create(['name' => 'Medicine With Active Lots']);
+    Lot::create([
+        'medicine_id' => $medicine->id,
+        'purchase_order_id' => $purchaseOrder->id,
+        'batch_number' => 'LOT003',
+        'expiration_date' => now()->addYear(),
+        'current_quantity' => 10,
+        'initial_quantity' => 10,
+        'reception_date' => now(),
+        'unit_purchase_price' => 50.0,
+        'status' => 'active',
+        'created_by' => $user->id,
+    ]);
+
+    Volt::test('medicines.index')
+        ->call('confirmMedicineDeletion', $medicine->id)
+        ->call('deleteMedicine')
+        ->assertHasErrors(['deletion_error'])
+        ->assertSee('No se puede archivar el medicamento porque existen lotes activos en el inventario asociados a este producto.');
+
+    // Medicine should not be soft deleted
+    $medicine->refresh();
+    expect($medicine->trashed())->toBeFalse();
 });
