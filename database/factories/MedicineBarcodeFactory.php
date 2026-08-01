@@ -22,4 +22,11 @@ class MedicineBarcodeFactory extends Factory
             'deleted_by' => null,
         ];
     }
+
+    public function main(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'is_main' => true,
+        ]);
+    }
 }
