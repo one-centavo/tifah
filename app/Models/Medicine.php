@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -12,6 +13,13 @@ class Medicine extends Model
     use SoftDeletes;
 
     protected $fillable = ['category_id', 'laboratory_id', 'sanitary_registry_id', 'name', 'generic_name', 'concentration_value', 'concentration_unit_id', 'container_id', 'content_quantity', 'content_unit_id', 'is_cold_chain', 'is_special_control', 'min_stock', 'selling_price', 'description', 'created_by', 'updated_by', 'deleted_by'];
+
+    protected function presentation(): Attribute
+    {
+        return Attribute::make(
+            get: fn () => "{$this->container->name} x {$this->content_quantity} {$this->content_unit->name}"
+        );
+    }
 
     public function category()
     {
