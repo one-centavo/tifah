@@ -9,6 +9,7 @@ use App\Models\ConcentrationUnit;
 use App\Models\Container;
 use App\Models\ContentUnit;
 use App\Models\Laboratory;
+use App\Models\Medicine;
 use App\Models\SanitaryRegistry;
 use App\Services\MedicineService;
 use App\Services\LaboratoryService;

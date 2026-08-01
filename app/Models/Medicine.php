@@ -17,7 +17,12 @@ class Medicine extends Model
     protected function presentation(): Attribute
     {
         return Attribute::make(
-            get: fn () => "{$this->container->name} x {$this->content_quantity} {$this->content_unit->name}"
+            get: fn () => sprintf(
+                '%s x %d %s',
+                $this->container?->name ?? 'N/A',
+                $this->content_quantity,
+                $this->contentUnit?->name ?? 'N/A'
+            )
         );
     }
 
