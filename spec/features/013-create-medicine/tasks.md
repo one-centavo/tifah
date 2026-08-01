@@ -1,0 +1,28 @@
+# 013 · Create Medicine & Medicine Catalog Management — Tasks
+
+- [ ] Implement dynamic accessor `presentation` in `App\Models\Medicine.php`.
+- [ ] Create service `App\Services\MedicineService.php` with:
+  - `findDuplicate(array $data)`
+  - `create(array $data)`
+  - `linkBarcode(Medicine $medicine, string $barcode)`
+  - `delete(Medicine $medicine)`
+- [ ] Create Volt Livewire creation page component at `resources/views/livewire/medicines/create.blade.php` with:
+  - Full grid form for all inputs.
+  - Interactive searchable selectors for Laboratory and Sanitary Registry.
+  - Validation rules matching constraints (barcode manual numeric 8-14, name max 100, etc.).
+  - Auto-generate barcode button and logic.
+  - Category change listener to toggle cold chain & special control flags (with manual override allowed).
+  - Quick Laboratory Registration modal.
+  - Quick Sanitary Registry Registration modal.
+  - Duplication check combination interceptor & duplicate warning modal (with "Link Barcode" and "Cancel" buttons).
+- [ ] Create Volt Livewire catalog listing and management page component at `resources/views/livewire/medicines/index.blade.php` with:
+  - Table of active medicines displaying presentation and technical fields.
+  - Search, filter by category/status, and paginate.
+  - Delete action button triggering confirmation modal.
+  - Soft-delete execution using `MedicineService`.
+- [ ] Register web routes in `routes/web.php` for medicines index and create.
+- [ ] Update navigation sidebar link for Medicamentos in `resources/views/livewire/layout/navigation.blade.php`.
+- [ ] Create feature tests for creation at `tests/Feature/Pages/Medicines/CreateMedicineTest.php`.
+- [ ] Create feature tests for management and deletion at `tests/Feature/Pages/Medicines/MedicineManagementTest.php`.
+- [ ] Verify execution of `docker compose exec app php artisan test` and resolve any failing tests.
+- [ ] Run code formatters and check linting before task finalization.
