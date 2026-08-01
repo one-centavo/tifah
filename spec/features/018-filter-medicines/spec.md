@@ -1,6 +1,6 @@
 # 018 · Advanced Filters for Medicines
 
-**Status:** Draft
+**Status:** Completed
 
 ## What it does
 

@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Models\Category;
+use App\Models\Laboratory;
 use App\Models\Medicine;
 use App\Services\MedicineService;
 use Illuminate\Validation\ValidationException;
@@ -19,6 +20,14 @@ new #[Layout('layouts.app')] class extends Component
     public string $softDeleteFilter = 'active';
 
     public string $categoryFilter = 'all';
+
+    public string $laboratoryFilter = 'all';
+
+    public string $coldChainFilter = 'all';
+
+    public string $specialControlFilter = 'all';
+
+    public string $stockAlertFilter = 'all';
 
     public string $sortField = 'name';
 
@@ -44,6 +53,26 @@ new #[Layout('layouts.app')] class extends Component
     }
 
     public function updatingCategoryFilter(): void
+    {
+        $this->resetPage();
+    }
+
+    public function updatingLaboratoryFilter(): void
+    {
+        $this->resetPage();
+    }
+
+    public function updatingColdChainFilter(): void
+    {
+        $this->resetPage();
+    }
+
+    public function updatingSpecialControlFilter(): void
+    {
+        $this->resetPage();
+    }
+
+    public function updatingStockAlertFilter(): void
     {
         $this->resetPage();
     }
@@ -110,6 +139,23 @@ new #[Layout('layouts.app')] class extends Component
     }
 
     /**
+     * Reset all active filters to their default values.
+     */
+    public function resetFilters(): void
+    {
+        $this->reset([
+            'search',
+            'categoryFilter',
+            'laboratoryFilter',
+            'coldChainFilter',
+            'specialControlFilter',
+            'stockAlertFilter',
+            'softDeleteFilter',
+        ]);
+        $this->resetPage();
+    }
+
+    /**
      * Get the medicines with pagination and filters.
      */
     public function with(): array
@@ -131,7 +177,33 @@ new #[Layout('layouts.app')] class extends Component
             $query->where('category_id', $this->categoryFilter);
         }
 
-        // 3. Search (Name, Generic Name, Barcode)
+        // 3. Laboratory Filter
+        if ($this->laboratoryFilter !== 'all') {
+            $query->where('laboratory_id', $this->laboratoryFilter);
+        }
+
+        // 4. Cold Chain Filter
+        if ($this->coldChainFilter === 'yes') {
+            $query->where('is_cold_chain', true);
+        } elseif ($this->coldChainFilter === 'no') {
+            $query->where('is_cold_chain', false);
+        }
+
+        // 5. Special Control Filter
+        if ($this->specialControlFilter === 'yes') {
+            $query->where('is_special_control', true);
+        } elseif ($this->specialControlFilter === 'no') {
+            $query->where('is_special_control', false);
+        }
+
+        // 6. Stock Alert Filter
+        if ($this->stockAlertFilter === 'low') {
+            $query->whereRaw('(SELECT COALESCE(SUM(current_quantity), 0) FROM lots WHERE lots.medicine_id = medicines.id AND lots.deleted_at IS NULL) <= medicines.min_stock');
+        } elseif ($this->stockAlertFilter === 'out') {
+            $query->whereRaw('(SELECT COALESCE(SUM(current_quantity), 0) FROM lots WHERE lots.medicine_id = medicines.id AND lots.deleted_at IS NULL) = 0');
+        }
+
+        // 7. Search (Name, Generic Name, Barcode)
         if (! empty(trim($this->search))) {
             $searchTerm = '%'.trim($this->search).'%';
             $query->where(function ($q) use ($searchTerm) {
@@ -143,7 +215,7 @@ new #[Layout('layouts.app')] class extends Component
             });
         }
 
-        // 4. Sorting
+        // 8. Sorting
         if ($this->sortField === 'category') {
             $query->join('categories', 'medicines.category_id', '=', 'categories.id')
                 ->select('medicines.*')
@@ -159,6 +231,7 @@ new #[Layout('layouts.app')] class extends Component
         return [
             'medicines' => $query->paginate(10),
             'categories' => Category::orderBy('name')->get(),
+            'laboratories' => Laboratory::orderBy('name')->get(),
             'selectedMedicine' => $this->selectedMedicineId
                 ? Medicine::withTrashed()->with(['category', 'laboratory', 'sanitaryRegistry', 'container', 'contentUnit', 'barcodes', 'lots', 'creator', 'updater', 'deleter'])->find($this->selectedMedicineId)
                 : null,
@@ -199,44 +272,130 @@ new #[Layout('layouts.app')] class extends Component
     <!-- Filters Section -->
     <div class="bg-white border border-slate-100 shadow-sm rounded-2xl p-6 mb-6">
         <h2 class="text-lg font-bold text-blue-900 mb-4">Filtrar Medicamentos</h2>
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <!-- Search field -->
-            <div>
-                <label for="search" class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">Búsqueda</label>
-                <div class="relative">
-                    <input type="text" id="search" wire:model.live.debounce.300ms="search" placeholder="Buscar por nombre, principio activo o código..."
-                        class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all">
-                    @if($search)
-                        <button type="button" wire:click="$set('search', '')" class="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"></path>
-                            </svg>
-                        </button>
-                    @endif
+        <div class="space-y-6">
+            <!-- Row 1: Search & Basic Selects -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <!-- Search field -->
+                <div>
+                    <label for="search" class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">Búsqueda</label>
+                    <div class="relative">
+                        <input type="text" id="search" wire:model.live.debounce.300ms="search" placeholder="Buscar por nombre, principio activo o código..."
+                            class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all">
+                        @if($search)
+                            <button type="button" wire:click="$set('search', '')" class="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"></path>
+                                </svg>
+                            </button>
+                        @endif
+                    </div>
+                </div>
+
+                <!-- Category Filter -->
+                <div>
+                    <label for="categoryFilter" class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">Categoría</label>
+                    <select id="categoryFilter" wire:model.live="categoryFilter"
+                        class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all cursor-pointer">
+                        <option value="all">Todas</option>
+                        @foreach($categories as $category)
+                            <option value="{{ $category->id }}">{{ $category->name }}</option>
+                        @endforeach
+                    </select>
+                </div>
+
+                <!-- Laboratory Filter -->
+                <div>
+                    <label for="laboratoryFilter" class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">Laboratorio</label>
+                    <select id="laboratoryFilter" wire:model.live="laboratoryFilter"
+                        class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all cursor-pointer">
+                        <option value="all">Todos</option>
+                        @foreach($laboratories as $lab)
+                            <option value="{{ $lab->id }}">{{ $lab->name }}</option>
+                        @endforeach
+                    </select>
+                </div>
+
+                <!-- Soft Delete filter -->
+                <div>
+                    <label for="softDeleteFilter" class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">Visibilidad en Catálogo</label>
+                    <select id="softDeleteFilter" wire:model.live="softDeleteFilter"
+                        class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all cursor-pointer">
+                        <option value="active">Sí (Activos)</option>
+                        <option value="archived">No (Eliminados)</option>
+                        <option value="all">Todos</option>
+                    </select>
                 </div>
             </div>
 
-            <!-- Category Filter -->
-            <div>
-                <label for="categoryFilter" class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">Categoría</label>
-                <select id="categoryFilter" wire:model.live="categoryFilter"
-                    class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all cursor-pointer">
-                    <option value="all">Todas</option>
-                    @foreach($categories as $category)
-                        <option value="{{ $category->id }}">{{ $category->name }}</option>
-                    @endforeach
-                </select>
-            </div>
+            <!-- Row 2: Advanced Logistics/Supply Selectors & Reset -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <!-- Cold Chain Toggle -->
+                <div>
+                    <span class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">Cadena de Frío</span>
+                    <div class="inline-flex rounded-xl p-0.5 bg-slate-100 border border-slate-200 w-full">
+                        <button type="button" wire:click="$set('coldChainFilter', 'all')" 
+                            class="flex-1 text-center py-1.5 rounded-lg text-xs font-semibold transition-all duration-150 {{ $coldChainFilter === 'all' ? 'bg-white text-blue-900 shadow-sm' : 'text-slate-500 hover:text-slate-800' }}">
+                            Todos
+                        </button>
+                        <button type="button" wire:click="$set('coldChainFilter', 'yes')" 
+                            class="flex-1 text-center py-1.5 rounded-lg text-xs font-semibold transition-all duration-150 {{ $coldChainFilter === 'yes' ? 'bg-white text-blue-900 shadow-sm' : 'text-slate-500 hover:text-slate-800' }}">
+                            Sí
+                        </button>
+                        <button type="button" wire:click="$set('coldChainFilter', 'no')" 
+                            class="flex-1 text-center py-1.5 rounded-lg text-xs font-semibold transition-all duration-150 {{ $coldChainFilter === 'no' ? 'bg-white text-blue-900 shadow-sm' : 'text-slate-500 hover:text-slate-800' }}">
+                            No
+                        </button>
+                    </div>
+                </div>
 
-            <!-- Soft Delete filter -->
-            <div>
-                <label for="softDeleteFilter" class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">Visibilidad en Catálogo</label>
-                <select id="softDeleteFilter" wire:model.live="softDeleteFilter"
-                    class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all cursor-pointer">
-                    <option value="active">Sí (Activos)</option>
-                    <option value="archived">No (Eliminados)</option>
-                    <option value="all">Todos</option>
-                </select>
+                <!-- Special Control Toggle -->
+                <div>
+                    <span class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">Control Especial</span>
+                    <div class="inline-flex rounded-xl p-0.5 bg-slate-100 border border-slate-200 w-full">
+                        <button type="button" wire:click="$set('specialControlFilter', 'all')" 
+                            class="flex-1 text-center py-1.5 rounded-lg text-xs font-semibold transition-all duration-150 {{ $specialControlFilter === 'all' ? 'bg-white text-blue-900 shadow-sm' : 'text-slate-500 hover:text-slate-800' }}">
+                            Todos
+                        </button>
+                        <button type="button" wire:click="$set('specialControlFilter', 'yes')" 
+                            class="flex-1 text-center py-1.5 rounded-lg text-xs font-semibold transition-all duration-150 {{ $specialControlFilter === 'yes' ? 'bg-white text-blue-900 shadow-sm' : 'text-slate-500 hover:text-slate-800' }}">
+                            Sí
+                        </button>
+                        <button type="button" wire:click="$set('specialControlFilter', 'no')" 
+                            class="flex-1 text-center py-1.5 rounded-lg text-xs font-semibold transition-all duration-150 {{ $specialControlFilter === 'no' ? 'bg-white text-blue-900 shadow-sm' : 'text-slate-500 hover:text-slate-800' }}">
+                            No
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Stock Alert Filter -->
+                <div>
+                    <span class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">Alerta de Inventario</span>
+                    <div class="inline-flex rounded-xl p-0.5 bg-slate-100 border border-slate-200 w-full">
+                        <button type="button" wire:click="$set('stockAlertFilter', 'all')" 
+                            class="flex-1 text-center py-1.5 rounded-lg text-xs font-semibold transition-all duration-150 {{ $stockAlertFilter === 'all' ? 'bg-white text-blue-900 shadow-sm' : 'text-slate-500 hover:text-slate-800' }}">
+                            Todos
+                        </button>
+                        <button type="button" wire:click="$set('stockAlertFilter', 'low')" 
+                            class="flex-1 text-center py-1.5 rounded-lg text-xs font-semibold transition-all duration-150 {{ $stockAlertFilter === 'low' ? 'bg-white text-blue-900 shadow-sm' : 'text-slate-500 hover:text-slate-800' }}">
+                            Bajo Stock
+                        </button>
+                        <button type="button" wire:click="$set('stockAlertFilter', 'out')" 
+                            class="flex-1 text-center py-1.5 rounded-lg text-xs font-semibold transition-all duration-150 {{ $stockAlertFilter === 'out' ? 'bg-white text-blue-900 shadow-sm' : 'text-slate-500 hover:text-slate-800' }}">
+                            Agotados
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Clear Filters Button -->
+                <div class="flex items-end">
+                    <button type="button" wire:click="resetFilters" 
+                        class="w-full bg-slate-50 border border-slate-200 hover:bg-slate-100 hover:text-blue-950 text-slate-600 font-semibold px-4 py-2.5 rounded-xl text-sm transition-all duration-150 ease-in-out cursor-pointer flex items-center justify-center gap-1.5 shadow-sm">
+                        <svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99"></path>
+                        </svg>
+                        <span>Limpiar Filtros</span>
+                    </button>
+                </div>
             </div>
         </div>
     </div>
