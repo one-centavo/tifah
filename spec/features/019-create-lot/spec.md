@@ -1,35 +1,40 @@
-# 019 · Merchandise Reception & Lot Registration (HU 12)
+# 019 · Inventory Management & Lot Reception (HU 12)
 
 **Status:** Draft
 
 ## What it does
 
-Allows Warehouse Assistants and Administrators to record incoming inventory shipments by registering products under specific lot (batch) numbers and expiration dates. To streamline warehouse workflows, the interface permits loading multiple products and their respective lot details into a temporary list before committing them to the database. The feature includes real-time barcode scanning validation, quick registration modals for unregistered medicines and suppliers, profitability warning systems, automatic inventory stock calculations, and auditable logical deletions. All batch/lot operations are housed under the Inventory section.
+Allows Warehouse Assistants and Administrators to manage inventory lots and register incoming shipments in a single, consolidated **Inventario** page. The interface contains a tab-based layout:
+1. **Control de Lotes (Lot Control):** A table displaying active inventory batches, their current stock, statuses, and allowing logical soft deletes for tracing.
+2. **Recepción de Mercancía (Merchandise Reception):** A dynamic form for scanning/typing barcodes, entering batch numbers, expiration dates, unit purchase costs, quantities, and suppliers. It supports loading multiple items into a temporary summary table, calculating subtotals, checking profit warning margins, and registering new suppliers or medicines on the fly.
+
+Both control and reception operations are housed under the single route `/inventory`.
 
 ## Why
 
-To guarantee strict product traceability, prevent the entry of expired products, automate stock replenishment, monitor purchase costs against sales prices, and maintain a complete audit trail of inventory entries and deletions.
+To simplify warehouse administration by centralizing all lot operations, preventing the entrance of expired products, monitoring margins, and keeping a comprehensive audit trail of inventory entries and logical deletions in one place.
 
 ## Acceptance criteria
 
-### 1. Route and Sidenav Integration (Inventory Section)
-- The merchandise reception interface must be accessible at the route `/inventory/reception` (`inventory.reception`).
-- The lot management and history table must be accessible at the route `/inventory/lots` (`inventory.lots`).
-- The sidebar navigation layout must include a collapsible or direct **Inventario** menu with links to "Recepción de Mercancía" and "Control de Lotes".
+### 1. Unified Sidenav and Route Integration (Inventory Section)
+- The entire feature must be accessible at the route `/inventory` (`inventory.index`).
+- The sidebar navigation layout must include a single **Inventario** menu link pointing to `/inventory`.
 
-### 2. Barcode Scanning and Medicine Discovery
-- The entry screen must present a **Código de Barras (Barcode)** input field.
+### 2. Tabbed UI Layout
+The `/inventory` dashboard must present two clear tabs:
+- **"Control de Lotes" (Default Tab):** Lists active lot information.
+- **"Recepción de Mercancía":** Contains the entry interface.
+Switching tabs must preserve the temporary state of the merchandise reception form and list so the user does not lose unsaved progress when verifying current stock.
+
+### 3. Barcode Scanning and Medicine Discovery (Reception Tab)
+- The merchandise reception tab must show a **Código de Barras (Barcode)** input field.
 - Upon barcode scanning or manual entry:
-  - If the barcode matches an existing medicine (in the `medicine_barcodes` table), the system must auto-populate the product details (e.g., Commercial Name, Generic Name, Sale Price) and set focus to the batch registration form.
-  - If the barcode does not exist, the system must show a prominent button: `"Registrar nuevo medicamento"`. Clicking this button must open the medicine registration screen or a modal to register the medicine *without closing or clearing the current merchandise reception state*.
-
-### 3. Temporary List Formulation (Pre-commit Table)
-- The system must provide a stateful temporary list (or summary table) on the screen.
-- Users can fill in the lot details and click an **"Añadir a la lista" (Add to List)** button. This action adds the item to the temporary table only, postponing database persistence until the user clicks the final confirmation button.
+  - If the barcode matches an existing medicine, the system must auto-populate the product details (Commercial Name, Generic Name, Sale Price) and set focus to the batch registration form.
+  - If the barcode does not exist, the system must display a button: `"Registrar nuevo medicamento"`. Clicking this opens the medicine registration screen in a new window/tab to avoid closing the current reception state.
 
 ### 4. Lot Details Form and Fields Validation
-The registration form for each batch must validate the following fields:
-- **Producto (Product):** Required. Must display the name of the medicine.
+The registration form in the reception tab must validate the following fields:
+- **Producto (Product):** Required. Must show the name of the medicine.
 - **Número de Lote (Batch/Lot Number) (`batch_number`):** Required. Must allow alphanumeric characters (letters and numbers). Cannot be empty.
 - **Fecha de Vencimiento (Expiration Date) (`expiration_date`):** Required. Must be a valid date.
   - **Expiry Check:** The system must prevent entering products that are already expired by comparing `expiration_date` with the current server date. If expired, prevent adding to the list and show an error message: `"No se pueden ingresar productos vencidos"`.
@@ -40,7 +45,7 @@ The registration form for each batch must validate the following fields:
 
 ### 5. Quick Supplier Registration
 - Adjacent to the supplier dropdown, a quick-action button must allow registering a new supplier.
-- This button triggers a simple modal/form containing:
+- This button triggers a simple modal containing:
   - **NIT** (Required, unique)
   - **DV** (Required, single digit)
   - **Nombre / Razón Social** (Required)
@@ -80,8 +85,8 @@ The registration form for each batch must validate the following fields:
 - Newly registered lots are automatically set to `"active"` by default, making them immediately available for sale.
 - During the registration phase, the user can override the status dropdown to select `"blocked"` or `"damaged"` if they detect visual damage, packaging issues, or logistical problems.
 
-### 11. Auditable Logical Deletion of Batches
-- Inside the lot management list (`/inventory/lots`), users with appropriate roles can delete lots.
+### 11. Auditable Logical Deletion of Batches (Control Tab)
+- In the "Control de Lotes" tab, users with appropriate roles can delete lots.
 - Deleting a lot must perform a logical soft delete (using Laravel's `SoftDeletes` trait on the `lots` table).
 - The system must automatically record:
   - The ID of the authenticated user in the `deleted_by` column.
@@ -89,5 +94,5 @@ The registration form for each batch must validate the following fields:
 - Deleted lots are hidden from the stock lists and inventory calculations but preserved in the database for future audits.
 
 ## Out of Scope
-- Integration with external physical barcode printers (handled in a separate barcode print module).
-- Automatic purchase order matching (this view handles direct, manual inventory entries).
+- Integration with external physical barcode printers.
+- Automatic purchase order matching.

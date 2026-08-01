@@ -1,120 +1,76 @@
-# 019 · Merchandise Reception & Lot Registration — Plan
+# 019 · Inventory Management & Lot Reception — Plan
 
 ## Approach
 
-We will implement the Merchandise Reception and Lot Registration features. The database schemas are already defined in the existing migrations (`create_lots_table`, `create_suppliers_table`, `create_purchase_orders_table`, and `create_inventory_movements_table`). We will create a service layer `LotService` to encapsulate business logic (handling database transactions, registering purchase orders to link lots with suppliers, and logging inventory movements). We will also define `SupplierService` for quick supplier creations. Finally, we will build two Livewire Volt components: `inventory.reception` for entering shipments, and `inventory.lots` for history/deleting lots.
+We will implement a single, unified Inventory dashboard under a tabbed Livewire Volt component (`resources/views/livewire/inventory/index.blade.php`) representing the route `/inventory`. The page will combine lot tracking/management ("Control de Lotes" tab) and merchandise entry ("Recepción de Mercancía" tab) in one place. We will utilize the previously created `LotService` and `SupplierService` for business orchestration and database transactions.
 
 ---
 
-### 1. Database & Model Integrations
+### 1. Unified Volt Component (`App\Livewire\Inventory\Index`)
 
-- **Lot & Supplier Schema Mapping:**
-  - Since the `lots` table does not have a direct `supplier_id` column, it belongs to `purchase_orders`, which links directly to `suppliers`.
-  - When confirming a merchandise reception, the system must first create a parent `PurchaseOrder` with `status => 'received'` to act as the transaction container, group the lots, and record the supplier relationship.
-- **Auditing Traits:**
-  - Ensure the `Lot` model uses the `SoftDeletes` trait.
-  - Implement dynamic methods or accessors in `Medicine` (e.g. a `current_stock` helper) that sum the `current_quantity` of active lots.
+The single component `inventory.index` will manage the tab selections, search, lot lists, temporary forms, modals, and final persistence.
 
----
+- **State Properties:**
+  - `$activeTab = 'lots';` (Options: `'lots'` for control table, `'reception'` for shipment entries).
+  - **Reception Form State:**
+    - `$barcode`: string
+    - `$selectedMedicine`: model instance or array
+    - `$temporaryLots = []`: array of uncommitted batches
+    - `$showSupplierModal = false`: boolean for supplier creation modal
+    - Inputs: `$batch_number`, `$expiration_date`, `$quantity`, `$unit_purchase_price`, `$reception_date`, `$supplier_id`, `$status`.
+  - **Lots Control State:**
+    - `$searchTerm = '';`
+    - Pagination is supported. Reset page hooks will trigger when searching or switching tabs.
 
-### 2. Business Logic Layer
-
-#### `App\Services\SupplierService`
-Create a helper service to register suppliers quickly:
-- `createSupplier(array $data): Supplier`
-  - Creates a `Supplier` record with NIT, DV, Name, Contact Person, Phone, Email, and Address.
-  - Automatically logs `created_by => auth()->id()`.
-
-#### `App\Services\LotService`
-Create `App\Services\LotService` to orchestrate merchandise entries and deletions:
-- `receiveMerchandise(array $lotsData, int $supplierId, string $receptionDate): void`
-  - Wraps the operation inside a database transaction (`DB::transaction`).
-  - Calculates the total purchase cost: sum of `(quantity * unit_purchase_price)` for all batches.
-  - Creates a `PurchaseOrder` record:
-    - `supplier_id => $supplierId`
-    - `status => 'received'`
-    - `received_at => $receptionDate`
-    - `total_estimated => $totalCost`
-    - `created_by => auth()->id()`
-  - For each lot in `$lotsData`:
-    - Creates a `Lot` record:
-      - `medicine_id => $lot['medicine_id']`
-      - `purchase_order_id => $purchaseOrder->id`
-      - `batch_number => $lot['batch_number']`
-      - `expiration_date => $lot['expiration_date']`
-      - `initial_quantity => $lot['quantity']`
-      - `current_quantity => $lot['quantity']`
-      - `reception_date => $receptionDate`
-      - `unit_purchase_price => $lot['unit_purchase_price']`
-      - `status => $lot['status'] ?? 'active'`
-      - `created_by => auth()->id()`
-    - Creates an `InventoryMovement` record:
-      - `lot_id => $newLot->id`
-      - `type => 'entry'`
-      - `quantity => $newLot->initial_quantity`
-      - `previous_balance => 0`
-      - `new_balance => $newLot->initial_quantity`
-      - `concept => 'Merchandise reception - Batch ' . $newLot->batch_number`
-      - `reference_id => $purchaseOrder->id`
-      - `created_by => auth()->id()`
-
-- `deleteLot(Lot $lot): void`
-  - Set `deleted_by => auth()->id()` on the lot.
-  - Soft-delete the lot using `$lot->delete()`.
-  - Log an `'adjustment'` inventory movement if required to bring stock levels to 0.
+- **Component Methods:**
+  - `switchTab(string $tab)`: Toggles between `'lots'` and `'reception'`, keeping the `$temporaryLots` list and inputs preserved in state.
+  - `updatedBarcode()`: Triggers barcode lookup. Searches `MedicineBarcode` and updates `$selectedMedicine` if found, setting the focus to batch inputs.
+  - `addToTemporaryList()`: Validates inputs. If `$batch_number` already exists for this medicine in `$temporaryLots`, it increments its quantity and recalculates row totals. Else, pushes new item. Resets batch input fields (keeping `$supplier_id` and `$reception_date` as convenient defaults).
+  - `editTemporaryLot(int $index)`: Removes the lot from `$temporaryLots` and populates the input fields with its values for correction.
+  - `removeTemporaryLot(int $index)`: Removes the lot from `$temporaryLots` entirely.
+  - `confirmReception()`: Calls `LotService::receiveMerchandise()` inside transaction, clears the temporary list/fields, switches back to `'lots'` tab, and displays a success alert.
+  - `deleteLot(int $id)`: Triggers soft-delete inside confirmation, calls `LotService::deleteLot()`, and refreshes the lots table.
 
 ---
 
-### 3. UI/UX Livewire Volt Components
+### 2. UI Layout Architecture
 
-#### 3.1. Merchandise Reception (`resources/views/livewire/inventory/reception.blade.php`)
-- **State Management:**
-  - `$barcode`: String for scanning.
-  - `$selectedMedicine`: Model instance or array representing the discovered medicine.
-  - `$temporaryLots = []`: Array holding the temporary items added to the screen.
-  - `$showSupplierModal = false`: Boolean to display the quick supplier addition form.
-  - Form Fields: `$batch_number`, `$expiration_date`, `$quantity`, `$unit_purchase_price`, `$reception_date`, `$supplier_id`, `$status`.
-- **Barcode Lookup:**
-  - Method `updatedBarcode()` searches the medicine catalog. If found, populate `$selectedMedicine` and focus on lot fields.
-  - If not found, display a helper link/button to register the medicine. The medicine creation modal or screen must open in a new tab or handle state without clearing the current reception list.
-- **Calculations & Warnings:**
-  - Computes `Subtotal = quantity * unit_purchase_price` dynamically.
-  - Checks if `unit_purchase_price > selectedMedicine.selling_price` and displays a flash warning.
-- **List Actions:**
-  - **"Añadir a la lista":** Validate inputs. If `$batch_number` already exists in `$temporaryLots`, add the quantity to the existing row and recalculate subtotals. Otherwise, append to `$temporaryLots`. Clear form fields.
-  - **Editar:** Remove row from `$temporaryLots` and load its data back into the form inputs for editing.
-  - **Borrar:** Remove row from `$temporaryLots`.
-- **Confirm Entry:**
-  - Submits `$temporaryLots` to `LotService::receiveMerchandise`, redirects to `/inventory/lots` with a success message.
-
-#### 3.2. Lot Management (`resources/views/livewire/inventory/lots.blade.php`)
-- Displays a table listing all active lots: batch number, medicine name, expiration date, supplier, unit cost, status, and current stock.
-- Provides a soft-delete action for authorized users, prompting a confirmation modal and invoking `LotService::deleteLot()`.
+The single view `resources/views/livewire/inventory/index.blade.php` will be styled with Tailwind CSS:
+- **Header:** Title "Gestión de Inventario y Lotes".
+- **Tab Nav Bar:** Two tab items ("Control de Lotes" and "Recepción de Mercancía") with visual active state highlights.
+- **Tab 1 Content (Control de Lotes):**
+  - Search bar.
+  - Table showing current lots: Medicine Name, Batch Number, Expiration Date, Stock Quantity, Purchase Unit Cost, Supplier Name, Status Badge (`active`, `blocked`, `damaged`), Actions (Soft-delete).
+  - Standard empty-state warning: `"No se encontraron lotes registrados."` if empty.
+- **Tab 2 Content (Recepción de Mercancía):**
+  - **Form Grid:** Inputs for Barcode, Product Name (read-only), Batch (Lot) Number, Expiration Date, Quantity, Unit Cost, Reception Date, Supplier Dropdown, Status Dropdown.
+  - Subtotal calculator displaying total cost in real-time.
+  - Margins warning badge when unit cost > selling price.
+  - **Quick Add Supplier Modal:** Compact inline popup form.
+  - **Temporary Table:** Summary list of products currently added to the shipment.
+  - **Final Action Buttons:** "Confirmar Ingreso" and "Cancelar".
 
 ---
 
-### 4. Routing and Sidenav
+### 3. Routing & Sidebar Navigation
 
-- Routes inside the auth middleware group in `routes/web.php`:
-  - `Volt::route('inventory/reception', 'inventory.reception')->name('inventory.reception');`
-  - `Volt::route('inventory/lots', 'inventory.lots')->name('inventory.lots');`
-- Sidenav updates:
-  - Add an **Inventario** section in the main sidebar layout with two navigation links to the respective routes.
+- Add a single route in `routes/web.php` inside the auth middleware group:
+  - `Volt::route('inventory', 'inventory.index')->name('inventory.index');`
+- Sidenav Update:
+  - Add a single "Inventario" link in [`resources/views/layouts/app.blade.php`](file:///home/one-centavo/Proyectos/tifah/resources/views/layouts/app.blade.php) pointing to `route('inventory.index')`.
 
 ---
 
-### 5. Test Suite Expansion (PestPHP)
+### 4. PestPHP Testing Strategy
 
-We will create the following test files:
-- `tests/Feature/Pages/Inventory/MerchandiseReceptionTest.php`
-  - Guest authentication wall.
-  - Barcode scanning resolves valid products.
-  - Form validation: alphanumeric batches, decimal unit costs, positive integers for quantity.
-  - Expiration check: blocks products whose expiration date <= current date.
-  - Supplier quick-registration modal inserts correct database records and auto-selects.
-  - Adding to temporary list handles merges of identical batches.
-  - Warning notification displays if unit cost exceeds selling price.
-  - Submission creates a `PurchaseOrder`, inserts `Lot` entries, logs `InventoryMovement`, and tracks authenticated user IDs.
-- `tests/Feature/Pages/Inventory/LotManagementTest.php`
-  - Lists active batches and correctly computes current stocks.
-  - Soft-deleting a lot removes it from lists, updates `deleted_by` and `deleted_at`, and preserves records for historical checks.
+We will write features tests in `tests/Feature/Pages/Inventory/InventoryManagementTest.php`:
+- **General Page Behavior:** Guest redirects, tabs switching preserves states.
+- **Control Tab:** Lists active batches, dynamic search, soft deleting a lot works (checks `deleted_by`, changes quantity to 0, logs adjustment inventory movement).
+- **Reception Tab:**
+  - Discovering medicine via barcode works.
+  - Validations (alphanumeric lot numbers, positive integers, decimal unit costs).
+  - Expiration block (blocks dates <= today).
+  - Warning notification displays if cost exceeds selling price.
+  - Merging duplicate batch numbers inside temporary list.
+  - Adding new suppliers via inline modal.
+  - Final confirmation persists `PurchaseOrder`, `Lot` and `InventoryMovement` structures inside a single transaction.
