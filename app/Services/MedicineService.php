@@ -212,6 +212,12 @@ class MedicineService
      */
     public function delete(Medicine $medicine): void
     {
+        if ($medicine->hasActiveLots()) {
+            throw ValidationException::withMessages([
+                'medicine' => 'No se puede archivar el medicamento porque existen lotes activos en el inventario asociados a este producto.',
+            ]);
+        }
+
         DB::transaction(function () use ($medicine) {
             $userId = auth()->id();
 
