@@ -85,4 +85,9 @@ class Medicine extends Model
     {
         return $this->hasMany(Lot::class);
     }
+
+    public function hasLotsOrSales(): bool
+    {
+        return $this->lots()->exists() || $this->lots()->whereHas('billDetails')->exists();
+    }
 }
