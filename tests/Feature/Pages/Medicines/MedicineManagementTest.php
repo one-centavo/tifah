@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Models\Category;
+use App\Models\Laboratory;
 use App\Models\Lot;
 use App\Models\Medicine;
 use App\Models\MedicineBarcode;
@@ -82,6 +83,173 @@ test('it can filter medicines by category', function () {
         ->set('categoryFilter', (string) $cat1->id)
         ->assertSee('Amoxicilina MK')
         ->assertDontSee('Ibuprofeno Genfar');
+});
+
+test('it can filter medicines by laboratory', function () {
+    $user = User::factory()->create();
+    $this->actingAs($user);
+
+    $lab1 = Laboratory::factory()->create(['name' => 'Laboratorio A']);
+    $med1 = Medicine::factory()->create(['name' => 'Med A', 'laboratory_id' => $lab1->id]);
+
+    $lab2 = Laboratory::factory()->create(['name' => 'Laboratorio B']);
+    $med2 = Medicine::factory()->create(['name' => 'Med B', 'laboratory_id' => $lab2->id]);
+
+    Volt::test('medicines.index')
+        ->set('laboratoryFilter', (string) $lab1->id)
+        ->assertSee('Med A')
+        ->assertDontSee('Med B');
+});
+
+test('it can filter medicines by cold chain requirement', function () {
+    $user = User::factory()->create();
+    $this->actingAs($user);
+
+    $med1 = Medicine::factory()->create(['name' => 'Cold Med', 'is_cold_chain' => true]);
+    $med2 = Medicine::factory()->create(['name' => 'Warm Med', 'is_cold_chain' => false]);
+
+    Volt::test('medicines.index')
+        ->set('coldChainFilter', 'yes')
+        ->assertSee('Cold Med')
+        ->assertDontSee('Warm Med')
+        ->set('coldChainFilter', 'no')
+        ->assertSee('Warm Med')
+        ->assertDontSee('Cold Med')
+        ->set('coldChainFilter', 'all')
+        ->assertSee('Cold Med')
+        ->assertSee('Warm Med');
+});
+
+test('it can filter medicines by special control restriction', function () {
+    $user = User::factory()->create();
+    $this->actingAs($user);
+
+    $med1 = Medicine::factory()->create(['name' => 'Special Med', 'is_special_control' => true]);
+    $med2 = Medicine::factory()->create(['name' => 'Normal Med', 'is_special_control' => false]);
+
+    Volt::test('medicines.index')
+        ->set('specialControlFilter', 'yes')
+        ->assertSee('Special Med')
+        ->assertDontSee('Normal Med')
+        ->set('specialControlFilter', 'no')
+        ->assertSee('Normal Med')
+        ->assertDontSee('Special Med')
+        ->set('specialControlFilter', 'all')
+        ->assertSee('Special Med')
+        ->assertSee('Normal Med');
+});
+
+test('it can filter medicines by stock alerts', function () {
+    $user = User::factory()->create();
+    $this->actingAs($user);
+
+    $supplier = Supplier::create([
+        'nit' => '9999999-9',
+        'dv' => 9,
+        'name' => 'Supplier Test B',
+        'contact_person' => 'Jane Doe',
+        'phone_number' => '9876543',
+        'email' => 'supplier2@test.com',
+        'address' => 'Test address',
+        'created_by' => $user->id,
+    ]);
+
+    $purchaseOrder = PurchaseOrder::create([
+        'supplier_id' => $supplier->id,
+        'order_number' => 'PO-002',
+        'order_date' => now()->toDateString(),
+        'expected_date' => now()->addDays(5)->toDateString(),
+        'total_estimated' => 100.00,
+        'created_by' => $user->id,
+    ]);
+
+    // Medicine 1: Low stock (Stock 5 <= min_stock 10)
+    $med1 = Medicine::factory()->create(['name' => 'Low Stock Med', 'min_stock' => 10]);
+    Lot::create([
+        'medicine_id' => $med1->id,
+        'purchase_order_id' => $purchaseOrder->id,
+        'batch_number' => 'LOT101',
+        'expiration_date' => now()->addYear(),
+        'current_quantity' => 5,
+        'initial_quantity' => 10,
+        'reception_date' => now(),
+        'unit_purchase_price' => 5.0,
+        'status' => 'active',
+        'created_by' => $user->id,
+    ]);
+
+    // Medicine 2: Normal stock (Stock 20 > min_stock 10)
+    $med2 = Medicine::factory()->create(['name' => 'Normal Stock Med', 'min_stock' => 10]);
+    Lot::create([
+        'medicine_id' => $med2->id,
+        'purchase_order_id' => $purchaseOrder->id,
+        'batch_number' => 'LOT102',
+        'expiration_date' => now()->addYear(),
+        'current_quantity' => 20,
+        'initial_quantity' => 20,
+        'reception_date' => now(),
+        'unit_purchase_price' => 5.0,
+        'status' => 'active',
+        'created_by' => $user->id,
+    ]);
+
+    // Medicine 3: Out of stock (Stock 0)
+    $med3 = Medicine::factory()->create(['name' => 'Out of Stock Med', 'min_stock' => 10]);
+
+    // Test Low Stock Filter
+    Volt::test('medicines.index')
+        ->set('stockAlertFilter', 'low')
+        ->assertSee('Low Stock Med')
+        ->assertSee('Out of Stock Med') // Stock 0 is also <= min_stock 10
+        ->assertDontSee('Normal Stock Med');
+
+    // Test Out of Stock Filter
+    Volt::test('medicines.index')
+        ->set('stockAlertFilter', 'out')
+        ->assertSee('Out of Stock Med')
+        ->assertDontSee('Low Stock Med')
+        ->assertDontSee('Normal Stock Med');
+});
+
+test('it can apply cumulative filters', function () {
+    $user = User::factory()->create();
+    $this->actingAs($user);
+
+    $cat = Category::factory()->create(['name' => 'Category X']);
+    $lab = Laboratory::factory()->create(['name' => 'Lab X']);
+
+    // Match all criteria
+    $med1 = Medicine::factory()->create([
+        'name' => 'Perfect Match',
+        'category_id' => $cat->id,
+        'laboratory_id' => $lab->id,
+        'is_cold_chain' => true,
+    ]);
+
+    // Match only category
+    $med2 = Medicine::factory()->create([
+        'name' => 'Category Match Only',
+        'category_id' => $cat->id,
+        'is_cold_chain' => false,
+    ]);
+
+    Volt::test('medicines.index')
+        ->set('categoryFilter', (string) $cat->id)
+        ->set('laboratoryFilter', (string) $lab->id)
+        ->set('coldChainFilter', 'yes')
+        ->assertSee('Perfect Match')
+        ->assertDontSee('Category Match Only');
+});
+
+test('it displays empty state warning when filters yield no results', function () {
+    $user = User::factory()->create();
+    $this->actingAs($user);
+
+    $med = Medicine::factory()->create(['name' => 'Some Medicine']);
+
+    Volt::test('medicines.index')
+        ->set('search', 'NonExistentProduct')
+        ->assertSee('No se encontraron medicamentos que coincidan con los filtros aplicados');
 });
 
 test('it can soft delete a medicine and record deleter and delete related barcodes', function () {
