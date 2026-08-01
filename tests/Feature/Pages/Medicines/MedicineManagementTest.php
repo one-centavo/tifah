@@ -256,3 +256,46 @@ test('it prevents soft deletion of a medicine with active lots', function () {
     $medicine->refresh();
     expect($medicine->trashed())->toBeFalse();
 });
+
+test('it displays creator and updater details and actions in the medicine detail modal', function () {
+    $creator = User::factory()->create(['first_name' => 'John', 'last_name' => 'Creator']);
+    $updater = User::factory()->create(['first_name' => 'Jane', 'last_name' => 'Updater']);
+    $this->actingAs($creator);
+
+    $medicine = Medicine::factory()->create([
+        'name' => 'Test Detail Audit Medicine',
+        'created_by' => $creator->id,
+        'updated_by' => $updater->id,
+    ]);
+
+    Volt::test('medicines.index')
+        ->call('viewDetails', $medicine->id)
+        ->assertSee('John Creator')
+        ->assertSee('Jane Updater')
+        ->assertSee('Editar')
+        ->assertSee('Archivar');
+});
+
+test('it displays soft deletion audit details and hides actions for archived medicine in the detail modal', function () {
+    $creator = User::factory()->create(['first_name' => 'John', 'last_name' => 'Creator']);
+    $deleter = User::factory()->create(['first_name' => 'Mark', 'last_name' => 'Deleter']);
+    $this->actingAs($creator);
+
+    $medicine = Medicine::factory()->create([
+        'name' => 'Archived Medicine Detail',
+        'created_by' => $creator->id,
+    ]);
+
+    $medicine->deleted_by = $deleter->id;
+    $medicine->save();
+    $medicine->delete();
+
+    Volt::test('medicines.index')
+        ->set('softDeleteFilter', 'archived')
+        ->call('viewDetails', $medicine->id)
+        ->assertSee('Archived Medicine Detail')
+        ->assertSee('Eliminado por:')
+        ->assertSee('Mark Deleter')
+        ->assertDontSee('Editar')
+        ->assertDontSee('Archivar');
+});
