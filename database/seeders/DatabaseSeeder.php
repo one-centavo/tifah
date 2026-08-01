@@ -31,6 +31,7 @@ class DatabaseSeeder extends Seeder
             ContainerSeeder::class,
             ContentUnitSeeder::class,
             MedicineSeeder::class,
+            MedicineBarcodeSeeder::class,
         ]);
     }
 }
