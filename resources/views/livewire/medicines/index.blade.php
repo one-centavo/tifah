@@ -2,24 +2,33 @@
 
 declare(strict_types=1);
 
+use App\Models\Category;
+use App\Models\Medicine;
+use App\Services\MedicineService;
+use Illuminate\Validation\ValidationException;
+use Livewire\Attributes\Layout;
 use Livewire\Volt\Component;
 use Livewire\WithPagination;
-use Livewire\Attributes\Layout;
-use App\Models\Medicine;
-use App\Models\Category;
-use App\Services\MedicineService;
 
-new #[Layout('layouts.app')] class extends Component {
+new #[Layout('layouts.app')] class extends Component
+{
     use WithPagination;
 
     public string $search = '';
+
     public string $softDeleteFilter = 'active';
+
     public string $categoryFilter = 'all';
+
     public string $sortField = 'name';
+
     public string $sortDirection = 'asc';
 
     public ?int $medicineIdBeingDeleted = null;
+
     public string $medicineNameBeingDeleted = '';
+
+    public ?int $selectedMedicineId = null;
 
     /**
      * Reset pagination page when filters are updated.
@@ -53,6 +62,15 @@ new #[Layout('layouts.app')] class extends Component {
     }
 
     /**
+     * Show the medicine details.
+     */
+    public function viewDetails(int $id): void
+    {
+        $this->selectedMedicineId = $id;
+        $this->dispatch('open-modal', 'medicine-detail-modal');
+    }
+
+    /**
      * Confirm the medicine deletion.
      */
     public function confirmMedicineDeletion(int $id): void
@@ -69,7 +87,7 @@ new #[Layout('layouts.app')] class extends Component {
      */
     public function deleteMedicine(MedicineService $service): void
     {
-        if (!$this->medicineIdBeingDeleted) {
+        if (! $this->medicineIdBeingDeleted) {
             return;
         }
 
@@ -82,7 +100,7 @@ new #[Layout('layouts.app')] class extends Component {
             $this->reset(['medicineIdBeingDeleted', 'medicineNameBeingDeleted']);
 
             session()->flash('success', 'El medicamento ha sido eliminado con éxito.');
-        } catch (\Illuminate\Validation\ValidationException $e) {
+        } catch (ValidationException $e) {
             foreach ($e->errors() as $key => $messages) {
                 foreach ($messages as $message) {
                     $this->addError('deletion_error', $message);
@@ -97,7 +115,7 @@ new #[Layout('layouts.app')] class extends Component {
     public function with(): array
     {
         $query = Medicine::query()
-            ->with(['category', 'laboratory', 'sanitaryRegistry', 'container', 'contentUnit', 'barcodes']);
+            ->with(['category', 'laboratory', 'sanitaryRegistry', 'container', 'contentUnit', 'barcodes', 'lots']);
 
         // 1. Soft Delete Filter
         if ($this->softDeleteFilter === 'active') {
@@ -114,14 +132,14 @@ new #[Layout('layouts.app')] class extends Component {
         }
 
         // 3. Search (Name, Generic Name, Barcode)
-        if (!empty(trim($this->search))) {
-            $searchTerm = '%' . trim($this->search) . '%';
+        if (! empty(trim($this->search))) {
+            $searchTerm = '%'.trim($this->search).'%';
             $query->where(function ($q) use ($searchTerm) {
                 $q->where('name', 'like', $searchTerm)
-                  ->orWhere('generic_name', 'like', $searchTerm)
-                  ->orWhereHas('barcodes', function ($b) use ($searchTerm) {
-                      $b->where('barcode', 'like', $searchTerm);
-                  });
+                    ->orWhere('generic_name', 'like', $searchTerm)
+                    ->orWhereHas('barcodes', function ($b) use ($searchTerm) {
+                        $b->where('barcode', 'like', $searchTerm);
+                    });
             });
         }
 
@@ -135,12 +153,15 @@ new #[Layout('layouts.app')] class extends Component {
                 ->select('medicines.*')
                 ->orderBy('laboratories.name', $this->sortDirection);
         } else {
-            $query->orderBy('medicines.' . $this->sortField, $this->sortDirection);
+            $query->orderBy('medicines.'.$this->sortField, $this->sortDirection);
         }
 
         return [
             'medicines' => $query->paginate(10),
             'categories' => Category::orderBy('name')->get(),
+            'selectedMedicine' => $this->selectedMedicineId
+                ? Medicine::withTrashed()->with(['category', 'laboratory', 'sanitaryRegistry', 'container', 'contentUnit', 'barcodes', 'lots', 'creator', 'updater', 'deleter'])->find($this->selectedMedicineId)
+                : null,
         ];
     }
 }; ?>
@@ -297,7 +318,8 @@ new #[Layout('layouts.app')] class extends Component {
                             </th>
                             <th scope="col" class="px-6 py-4 text-left text-xs font-bold text-blue-900 uppercase tracking-wider">Laboratorio</th>
                             <th scope="col" class="px-6 py-4 text-center text-xs font-bold text-blue-900 uppercase tracking-wider">Logística</th>
-                            <th scope="col" class="px-6 py-4 text-right text-xs font-bold text-blue-900 uppercase tracking-wider">Precio</th>
+                            <th scope="col" class="px-6 py-4 text-right text-xs font-bold text-blue-900 uppercase tracking-wider">Precio de Venta</th>
+                            <th scope="col" class="px-6 py-4 text-center text-xs font-bold text-blue-900 uppercase tracking-wider">Stock Actual / Alerta</th>
                             <th scope="col" class="px-6 py-4 text-right text-xs font-bold text-blue-900 uppercase tracking-wider">Acciones</th>
                         </tr>
                     </thead>
@@ -318,7 +340,7 @@ new #[Layout('layouts.app')] class extends Component {
                                     {{ $medicine->generic_name ?: 'N/A' }}
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-600">
-                                    {{ number_format((float) $medicine->concentration_value, 0) }} {{ $medicine->concentrationUnit->symbol ?? '' }}
+                                    {{ $medicine->concentration_formatted }}
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-600">
                                     {{ $medicine->presentation }}
@@ -347,9 +369,39 @@ new #[Layout('layouts.app')] class extends Component {
                                 <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-semibold text-slate-800">
                                     ${{ number_format((float) $medicine->selling_price, 2) }}
                                 </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
+                                    @php
+                                        $totalStock = $medicine->lots->sum('current_quantity');
+                                        $isAlert = $totalStock <= $medicine->min_stock;
+                                    @endphp
+                                    <div class="flex items-center justify-center gap-1.5">
+                                        <span class="font-bold {{ $isAlert ? 'text-amber-600 dark:text-amber-400' : 'text-slate-800 dark:text-slate-200' }}">
+                                            {{ number_format($totalStock, 0) }}
+                                        </span>
+                                        @if($isAlert)
+                                            <span class="inline-flex items-center px-1.5 py-0.5 rounded-md text-[10px] font-bold bg-amber-50 text-amber-800 border border-amber-200" title="Stock igual o inferior al mínimo (Mín: {{ $medicine->min_stock }})">
+                                                <svg class="w-3.5 h-3.5 mr-0.5 text-amber-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                                                </svg>
+                                                Alerta
+                                            </span>
+                                        @endif
+                                    </div>
+                                </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                    @if(!$medicine->trashed())
-                                        <div class="flex justify-end gap-3">
+                                    <div class="flex justify-end gap-3 items-center">
+                                        <button type="button" 
+                                            wire:click="viewDetails({{ $medicine->id }})"
+                                            class="inline-flex items-center text-slate-600 hover:text-blue-900 transition-colors gap-1 cursor-pointer"
+                                            title="Ver Detalle">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z"></path>
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                            </svg>
+                                            <span>Ver Detalle</span>
+                                        </button>
+
+                                        @if(!$medicine->trashed())
                                             <a href="{{ route('medicines.edit', $medicine->id) }}" wire:navigate
                                                 class="inline-flex items-center text-blue-600 hover:text-blue-900 transition-colors gap-1 cursor-pointer">
                                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -359,16 +411,19 @@ new #[Layout('layouts.app')] class extends Component {
                                             </a>
                                             <button type="button" 
                                                 wire:click="confirmMedicineDeletion({{ $medicine->id }})"
-                                                class="inline-flex items-center text-red-600 hover:text-red-900 transition-colors gap-1 cursor-pointer">
+                                                class="inline-flex items-center text-red-600 hover:text-red-900 transition-colors gap-1 cursor-pointer"
+                                                title="Archivar">
                                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                                                     <path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0"></path>
                                                 </svg>
-                                                <span>Eliminar</span>
+                                                <span>Archivar</span>
                                             </button>
-                                        </div>
-                                    @else
-                                        <span class="text-xs text-slate-400 italic">Eliminado</span>
-                                    @endif
+                                        @else
+                                            <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold bg-slate-100 text-slate-700 border border-slate-200">
+                                                Archivado
+                                            </span>
+                                        @endif
+                                    </div>
                                 </td>
                             </tr>
                         @endforeach
@@ -406,5 +461,177 @@ new #[Layout('layouts.app')] class extends Component {
                 </x-danger-button>
             </div>
         </div>
+    </x-modal>
+
+    <!-- Medicine Detail Modal -->
+    <x-modal name="medicine-detail-modal" focusable>
+        @if($selectedMedicine)
+            <div class="p-6">
+                <!-- Header -->
+                <div class="border-b border-slate-100 pb-4 mb-6">
+                    <h2 class="text-2xl font-extrabold text-blue-900 dark:text-white">
+                        {{ $selectedMedicine->name }}
+                    </h2>
+                    <p class="text-sm font-semibold text-slate-500 mt-1">
+                        Principio Activo: <span class="text-blue-950">{{ $selectedMedicine->generic_name ?: 'N/A' }}</span>
+                    </p>
+                </div>
+
+                <!-- Info Grid -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Col 1: Technical specs -->
+                    <div class="space-y-4">
+                        <h3 class="text-sm font-bold uppercase tracking-wider text-slate-400">Especificaciones Técnicas</h3>
+                        <div class="bg-slate-50 dark:bg-slate-900 rounded-xl p-4 space-y-3">
+                            <div>
+                                <span class="block text-xs text-slate-500 font-medium">Concentración</span>
+                                <span class="text-sm font-semibold text-slate-800 dark:text-slate-200">{{ $selectedMedicine->concentration_formatted }}</span>
+                            </div>
+                            <div>
+                                <span class="block text-xs text-slate-500 font-medium">Presentación</span>
+                                <span class="text-sm font-semibold text-slate-800 dark:text-slate-200">{{ $selectedMedicine->presentation }}</span>
+                            </div>
+                            <div>
+                                <span class="block text-xs text-slate-500 font-medium">Laboratorio</span>
+                                <span class="text-sm font-semibold text-slate-800 dark:text-slate-200">{{ $selectedMedicine->laboratory?->name ?? 'N/A' }}</span>
+                            </div>
+                            <div>
+                                <span class="block text-xs text-slate-500 font-medium">Registro Sanitario INVIMA</span>
+                                <span class="text-sm font-semibold text-slate-800 dark:text-slate-200">{{ $selectedMedicine->sanitaryRegistry?->registration_number ?? 'N/A' }}</span>
+                                @if($selectedMedicine->sanitaryRegistry?->expiration_date)
+                                    <span class="block text-xs text-slate-400 mt-0.5">Expira: {{ \Carbon\Carbon::parse($selectedMedicine->sanitaryRegistry->expiration_date)->format('d/m/Y') }}</span>
+                                @endif
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Col 2: Stock, prices, logistics -->
+                    <div class="space-y-4">
+                        <h3 class="text-sm font-bold uppercase tracking-wider text-slate-400">Inventario y Control</h3>
+                        <div class="bg-slate-50 dark:bg-slate-900 rounded-xl p-4 space-y-3">
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <span class="block text-xs text-slate-500 font-medium">Precio de Venta</span>
+                                    <span class="text-sm font-bold text-slate-800 dark:text-slate-200">${{ number_format((float) $selectedMedicine->selling_price, 2) }}</span>
+                                </div>
+                                <div>
+                                    @php
+                                        $selTotalStock = $selectedMedicine->lots->sum('current_quantity');
+                                        $selIsAlert = $selTotalStock <= $selectedMedicine->min_stock;
+                                    @endphp
+                                    <span class="block text-xs text-slate-500 font-medium">Stock Actual</span>
+                                    <div class="flex items-center gap-1.5 mt-0.5">
+                                        <span class="text-sm font-bold {{ $selIsAlert ? 'text-amber-600' : 'text-slate-800 dark:text-slate-200' }}">
+                                            {{ number_format($selTotalStock, 0) }}
+                                        </span>
+                                        @if($selIsAlert)
+                                            <span class="inline-flex items-center px-1.5 py-0.5 rounded-md text-[9px] font-bold bg-amber-50 text-amber-800 border border-amber-200">
+                                                Alerta
+                                            </span>
+                                        @endif
+                                    </div>
+                                    <span class="block text-[10px] text-slate-400">Mínimo: {{ number_format($selectedMedicine->min_stock, 0) }}</span>
+                                </div>
+                            </div>
+
+                            <div class="border-t border-slate-100 dark:border-slate-800 pt-3">
+                                <span class="block text-xs text-slate-500 font-medium mb-1">Alertas y Controles Especiales</span>
+                                <div class="flex flex-wrap gap-2">
+                                    @if($selectedMedicine->is_cold_chain)
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-cyan-50 text-cyan-800 border border-cyan-200">
+                                            Requiere Cadena de Frío
+                                        </span>
+                                    @endif
+                                    @if($selectedMedicine->is_special_control)
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-purple-50 text-purple-800 border border-purple-200">
+                                            Sujeto a Control Especial
+                                        </span>
+                                    @endif
+                                    @if(!$selectedMedicine->is_cold_chain && !$selectedMedicine->is_special_control)
+                                        <span class="text-xs text-slate-400 italic">Sin controles especiales regulados.</span>
+                                    @endif
+                                </div>
+                            </div>
+
+                            <div>
+                                <span class="block text-xs text-slate-500 font-medium">Categoría</span>
+                                <span class="text-sm font-semibold text-slate-800 dark:text-slate-200">{{ $selectedMedicine->category?->name ?? 'N/A' }}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Barcodes List -->
+                <div class="mt-6 space-y-2">
+                    <h3 class="text-sm font-bold uppercase tracking-wider text-slate-400">Códigos de Barras</h3>
+                    <div class="bg-slate-50 dark:bg-slate-900 rounded-xl p-4 flex flex-wrap gap-2">
+                        @forelse($selectedMedicine->barcodes as $bar)
+                            <div class="inline-flex items-center rounded-lg bg-white dark:bg-slate-800 border {{ $bar->is_main ? 'border-blue-300 ring-2 ring-blue-100' : 'border-slate-200' }} px-3 py-1.5">
+                                <span class="text-xs font-mono text-slate-800 dark:text-slate-200 font-semibold">{{ $bar->barcode }}</span>
+                                @if($bar->is_main)
+                                    <span class="ml-1.5 text-[9px] font-bold uppercase tracking-wider bg-blue-50 text-blue-800 px-1 py-0.5 rounded">Principal</span>
+                                @endif
+                            </div>
+                        @empty
+                            <span class="text-xs text-slate-400 italic">No hay códigos de barras asociados.</span>
+                        @endforelse
+                    </div>
+                </div>
+
+                <!-- Description -->
+                <div class="mt-6 space-y-2">
+                    <h3 class="text-sm font-bold uppercase tracking-wider text-slate-400">Descripción / Notas</h3>
+                    <div class="bg-slate-50 dark:bg-slate-900 rounded-xl p-4 text-sm text-slate-700 dark:text-slate-300 whitespace-pre-line leading-relaxed">
+                        {{ $selectedMedicine->description ?: 'Sin descripción disponible.' }}
+                    </div>
+                </div>
+
+                <!-- Audit info -->
+                <div class="mt-6 border-t border-slate-100 dark:border-slate-800 pt-4 space-y-2 text-[11px] text-slate-400">
+                    <div class="flex flex-col sm:flex-row justify-between gap-2">
+                        <span>Registrado por: <strong>{{ $selectedMedicine->creator?->name ?? 'N/A' }}</strong> el {{ $selectedMedicine->created_at?->format('d/m/Y H:i') ?? 'N/A' }}</span>
+                        @if($selectedMedicine->updated_by)
+                            <span>Última modificación: <strong>{{ $selectedMedicine->updater?->name ?? 'N/A' }}</strong> el {{ $selectedMedicine->updated_at?->format('d/m/Y H:i') ?? 'N/A' }}</span>
+                        @endif
+                    </div>
+                    @if($selectedMedicine->deleted_at)
+                        <div class="text-rose-600 bg-rose-50/50 dark:bg-rose-950/20 px-3 py-1.5 rounded-lg border border-rose-100 dark:border-rose-900/50">
+                            Eliminado por: <strong>{{ $selectedMedicine->deleter?->name ?? 'N/A' }}</strong> el {{ $selectedMedicine->deleted_at->format('d/m/Y H:i') }}
+                        </div>
+                    @endif
+                </div>
+
+                <!-- Footer Actions -->
+                <div class="mt-8 flex flex-col sm:flex-row sm:justify-between items-center gap-3 border-t border-slate-100 dark:border-slate-800 pt-4">
+                    <div>
+                        @if(!$selectedMedicine->deleted_at)
+                            <div class="flex gap-2">
+                                <a href="{{ route('medicines.edit', $selectedMedicine->id) }}" wire:navigate
+                                    class="inline-flex items-center bg-blue-50 text-blue-700 hover:bg-blue-100 font-semibold px-4 py-2 rounded-xl text-xs transition-colors duration-200 gap-1 cursor-pointer">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10"></path>
+                                    </svg>
+                                    <span>Editar</span>
+                                </a>
+
+                                <button type="button" 
+                                    x-on:click="$dispatch('close')"
+                                    wire:click="confirmMedicineDeletion({{ $selectedMedicine->id }})"
+                                    class="inline-flex items-center bg-rose-50 text-rose-700 hover:bg-rose-100 font-semibold px-4 py-2 rounded-xl text-xs transition-colors duration-200 gap-1 cursor-pointer">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0"></path>
+                                    </svg>
+                                    <span>Archivar</span>
+                                </button>
+                            </div>
+                        @endif
+                    </div>
+
+                    <x-secondary-button x-on:click="$dispatch('close')" class="cursor-pointer">
+                        Cerrar Detalle
+                    </x-secondary-button>
+                </div>
+            </div>
+        @endif
     </x-modal>
 </div>
