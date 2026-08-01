@@ -486,11 +486,13 @@ new #[Layout('layouts.app')] class extends Component
                         @foreach($medicines as $medicine)
                             <tr class="hover:bg-slate-50/50 transition-colors" wire:key="medicine-{{ $medicine->id }}">
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
-                                    @foreach($medicine->barcodes as $bar)
-                                        <span class="inline-block bg-slate-100 text-slate-800 rounded px-2 py-0.5 text-xs font-mono mb-1 {{ $bar->is_main ? 'border border-blue-200 font-bold' : '' }}" title="{{ $bar->is_main ? 'Código Principal' : 'Código Vinculado' }}">
-                                            {{ $bar->barcode }}
+                                    @if($mainBar = $medicine->barcodes->firstWhere('is_main', true))
+                                        <span class="inline-block bg-slate-100 text-slate-800 rounded px-2 py-0.5 text-xs font-mono border border-blue-200 font-bold" title="Código Principal">
+                                            {{ $mainBar->barcode }}
                                         </span>
-                                    @endforeach
+                                    @else
+                                        <span class="text-slate-400">N/A</span>
+                                    @endif
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold text-blue-950">
                                     {{ $medicine->name }}

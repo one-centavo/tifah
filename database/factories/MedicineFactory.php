@@ -8,6 +8,7 @@ use App\Models\Container;
 use App\Models\ContentUnit;
 use App\Models\Laboratory;
 use App\Models\Medicine;
+use App\Models\MedicineBarcode;
 use App\Models\SanitaryRegistry;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -61,5 +62,19 @@ class MedicineFactory extends Factory
         return $this->state(fn (array $attributes) => [
             'is_special_control' => true,
         ]);
+    }
+
+    public function withBarcode(?string $barcode = null): static
+    {
+        return $this->has(
+            MedicineBarcode::factory()->state(function (array $attributes, Medicine $medicine) use ($barcode) {
+                return [
+                    'barcode' => $barcode ?? fake()->unique()->numerify('##########'),
+                    'is_main' => true,
+                    'created_by' => $medicine->created_by,
+                ];
+            }),
+            'barcodes'
+        );
     }
 }
