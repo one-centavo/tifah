@@ -327,7 +327,7 @@
 
                 <ul class="space-y-2">
                     <li>
-                        <a href="#"
+                        <a href="{{ route('medicines.index') }}" wire:navigate
                             class="flex items-center p-2 border-l-4 text-base font-medium transition-all duration-150 ease-in-out group {{ $medicinesActive ? 'bg-blue-50 text-blue-900 border-blue-900 font-semibold rounded-r-lg' : 'text-gray-900 border-transparent hover:bg-gray-100 rounded-lg' }}">
                             <x-tabler-vaccine-bottle
                                 class="w-6 h-6 transition duration-75 {{ $medicinesActive ? 'text-blue-900' : 'text-gray-500 group-hover:text-gray-900' }}" />
