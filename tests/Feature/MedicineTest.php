@@ -35,6 +35,14 @@ it('can create a special control medicine using factory state', function () {
     expect($medicine->is_special_control)->toBeTrue();
 });
 
+it('can create a medicine with a barcode using factory state', function () {
+    $medicine = Medicine::factory()->withBarcode('7701234567890')->create();
+
+    expect($medicine->barcodes)->toHaveCount(1);
+    expect($medicine->barcodes->first()->barcode)->toBe('7701234567890');
+    expect($medicine->barcodes->first()->is_main)->toBeTrue();
+});
+
 it('can seed medicines using MedicineSeeder', function () {
     $this->seed(MedicineSeeder::class);
 
