@@ -31,6 +31,7 @@ Route::middleware(['auth'])->group(function () {
     Volt::route('medicines/{medicine}/edit', 'medicines.edit')->name('medicines.edit');
 
     Volt::route('inventory', 'inventory.index')->name('inventory.index');
+    Volt::route('inventory/medicines/{medicine}/lots', 'inventory.medicine-lots')->name('inventory.medicine-lots');
 });
 
 require __DIR__.'/auth.php';
