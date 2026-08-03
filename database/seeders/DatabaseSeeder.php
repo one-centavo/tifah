@@ -33,6 +33,8 @@ class DatabaseSeeder extends Seeder
             ContentUnitSeeder::class,
             MedicineSeeder::class,
             MedicineBarcodeSeeder::class,
+            PurchaseOrderSeeder::class,
+            LotSeeder::class,
         ]);
     }
 }
