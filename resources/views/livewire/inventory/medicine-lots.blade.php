@@ -282,10 +282,10 @@ new #[Layout('layouts.app')] class extends Component
                                             <span>el {{ \Carbon\Carbon::parse($lot->deleted_at)->format('d/m/Y H:i') }}</span>
                                         </div>
                                     @else
-                                        <div class="flex items-center justify-end gap-3">
+                                        <div class="flex items-center justify-end gap-4">
                                             <a href="{{ route('inventory.lots.logs', $lot->id) }}" wire:navigate
-                                                class="inline-flex items-center text-blue-600 hover:text-blue-900 transition-colors gap-1 cursor-pointer">
-                                                <x-tabler-eye class="w-4 h-4" />
+                                                class="inline-flex items-center text-blue-900 hover:text-lime-600 transition-colors gap-1 cursor-pointer">
+                                                <x-tabler-history class="w-4 h-4" />
                                                 <span>Ver Historial</span>
                                             </a>
                                             <button type="button" wire:click="confirmLotDeletion({{ $lot->id }})"
