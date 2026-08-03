@@ -89,4 +89,30 @@ class LotService
             $lot->delete();
         });
     }
+
+    /**
+     * Adjust the current quantity of a lot and record the compensating movement.
+     */
+    public function adjust(Lot $lot, int $newQuantity, string $reason, string $observations, int $userId): void
+    {
+        DB::transaction(function () use ($lot, $newQuantity, $reason, $observations, $userId) {
+            $quantityDiff = $newQuantity - $lot->current_quantity;
+
+            InventoryMovement::create([
+                'lot_id' => $lot->id,
+                'type' => 'adjustment',
+                'quantity' => $quantityDiff,
+                'previous_balance' => $lot->current_quantity,
+                'new_balance' => $newQuantity,
+                'concept' => 'Ajuste por: ' . $reason . ' - ' . $observations,
+                'reference_id' => $lot->purchase_order_id,
+                'created_by' => $userId,
+            ]);
+
+            $lot->update([
+                'current_quantity' => $newQuantity,
+                'updated_by' => $userId,
+            ]);
+        });
+    }
 }
