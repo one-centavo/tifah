@@ -311,6 +311,15 @@
         </nav>
 
         <!-- Sidebar -->
+        @php
+            $medicinesActive = request()->routeIs('medicines.*');
+            $categoriesActive = request()->routeIs('categories.*');
+            $laboratoriesActive = request()->routeIs('laboratories.*');
+            $registriesActive = request()->routeIs('sanitary-registries.*') || request()->routeIs('registries.*');
+            $providersActive = request()->routeIs('providers.*') || request()->routeIs('suppliers.*');
+            $clientsActive = request()->routeIs('clients.*') || request()->routeIs('customers.*');
+            $inventoryActive = request()->routeIs('inventory.*');
+        @endphp
 
         <aside
             class="fixed top-0 left-0 z-40 w-64 h-screen pt-14 transition-transform -translate-x-full bg-sidebar border-r border-gray-200 md:translate-x-0"
@@ -319,50 +328,61 @@
 
                 <ul class="space-y-2">
                     <li>
-                        <a href="#"
-                            class="flex items-center p-2 text-base font-medium text-gray-900 rounded-lg hover:bg-gray-100 group">
+                        <a href="{{ route('medicines.index') }}" wire:navigate
+                            class="flex items-center p-2 border-l-4 text-base font-medium transition-all duration-150 ease-in-out group {{ $medicinesActive ? 'bg-blue-50 text-blue-900 border-blue-900 font-semibold rounded-r-lg' : 'text-gray-900 border-transparent hover:bg-gray-100 rounded-lg' }}">
                             <x-tabler-vaccine-bottle
-                                class="w-6 h-6 text-gray-500 transition duration-75 group-hover:text-gray-900" />
+                                class="w-6 h-6 transition duration-75 {{ $medicinesActive ? 'text-blue-900' : 'text-gray-500 group-hover:text-gray-900' }}" />
                             <span class="ml-3">Medicamentos</span>
                         </a>
                     </li>
                     <li>
-                        <a href="#"
-                            class="flex items-center p-2 text-base font-medium text-gray-900 rounded-lg hover:bg-gray-100 group">
+                        <a href="{{ route('categories.index') }}"
+                            class="flex items-center p-2 border-l-4 text-base font-medium transition-all duration-150 ease-in-out group {{ $categoriesActive ? 'bg-blue-50 text-blue-900 border-blue-900 font-semibold rounded-r-lg' : 'text-gray-900 border-transparent hover:bg-gray-100 rounded-lg' }}"
+                            wire:navigate>
                             <x-tabler-category
-                                class="w-6 h-6 text-gray-500 transition duration-75 group-hover:text-gray-900" />
+                                class="w-6 h-6 transition duration-75 {{ $categoriesActive ? 'text-blue-900' : 'text-gray-500 group-hover:text-gray-900' }}" />
                             <span class="ml-3">Categorias</span>
                         </a>
                     </li>
                     <li>
-                        <a href="#"
-                            class="flex items-center p-2 text-base font-medium text-gray-900 rounded-lg hover:bg-gray-100 group">
+                        <a href="{{ route('laboratories.index') }}"
+                            class="flex items-center p-2 border-l-4 text-base font-medium transition-all duration-150 ease-in-out group {{ $laboratoriesActive ? 'bg-blue-50 text-blue-900 border-blue-900 font-semibold rounded-r-lg' : 'text-gray-900 border-transparent hover:bg-gray-100 rounded-lg' }}"
+                            wire:navigate>
                             <x-tabler-building-factory
-                                class="w-6 h-6 text-gray-500 transition duration-75 group-hover:text-gray-900" />
+                                class="w-6 h-6 transition duration-75 {{ $laboratoriesActive ? 'text-blue-900' : 'text-gray-500 group-hover:text-gray-900' }}" />
                             <span class="ml-3">Laboratorios</span>
                         </a>
                     </li>
                     <li>
-                        <a href="#"
-                            class="flex items-center p-2 text-base font-medium text-gray-900 rounded-lg hover:bg-gray-100 group">
+                        <a href="{{ route('sanitary-registries.index') }}"
+                            class="flex items-center p-2 border-l-4 text-base font-medium transition-all duration-150 ease-in-out group {{ $registriesActive ? 'bg-blue-50 text-blue-900 border-blue-900 font-semibold rounded-r-lg' : 'text-gray-900 border-transparent hover:bg-gray-100 rounded-lg' }}"
+                            wire:navigate>
                             <x-tabler-file-check
-                                class="w-6 h-6 text-gray-500 transition duration-75 group-hover:text-gray-900" />
+                                class="w-6 h-6 transition duration-75 {{ $registriesActive ? 'text-blue-900' : 'text-gray-500 group-hover:text-gray-900' }}" />
                             <span class="ml-3">Registros Sanitarios</span>
                         </a>
                     </li>
                     <li>
+                        <a href="{{ route('inventory.index') }}" wire:navigate
+                            class="flex items-center p-2 border-l-4 text-base font-medium transition-all duration-150 ease-in-out group {{ $inventoryActive ? 'bg-blue-50 text-blue-900 border-blue-900 font-semibold rounded-r-lg' : 'text-gray-900 border-transparent hover:bg-gray-100 rounded-lg' }}">
+                            <x-tabler-packages
+                                class="w-6 h-6 transition duration-75 {{ $inventoryActive ? 'text-blue-900' : 'text-gray-500 group-hover:text-gray-900' }}" />
+                            <span class="ml-3">Inventario</span>
+                        </a>
+                    </li>
+                    <li>
                         <a href="#"
-                            class="flex items-center p-2 text-base font-medium text-gray-900 rounded-lg hover:bg-gray-100 group">
+                            class="flex items-center p-2 border-l-4 text-base font-medium transition-all duration-150 ease-in-out group {{ $providersActive ? 'bg-blue-50 text-blue-900 border-blue-900 font-semibold rounded-r-lg' : 'text-gray-900 border-transparent hover:bg-gray-100 rounded-lg' }}">
                             <x-tabler-truck-delivery
-                                class="w-6 h-6 text-gray-500 transition duration-75 group-hover:text-gray-900" />
+                                class="w-6 h-6 transition duration-75 {{ $providersActive ? 'text-blue-900' : 'text-gray-500 group-hover:text-gray-900' }}" />
                             <span class="ml-3">Proveedores</span>
                         </a>
                     </li>
                     <li>
                         <a href="#"
-                            class="flex items-center p-2 text-base font-medium text-gray-900 rounded-lg hover:bg-gray-100 group">
+                            class="flex items-center p-2 border-l-4 text-base font-medium transition-all duration-150 ease-in-out group {{ $clientsActive ? 'bg-blue-50 text-blue-900 border-blue-900 font-semibold rounded-r-lg' : 'text-gray-900 border-transparent hover:bg-gray-100 rounded-lg' }}">
                             <x-tabler-users
-                                class="w-6 h-6 text-gray-500 transition duration-75 group-hover:text-gray-900" />
+                                class="w-6 h-6 transition duration-75 {{ $clientsActive ? 'text-blue-900' : 'text-gray-500 group-hover:text-gray-900' }}" />
                             <span class="ml-3">Clientes</span>
                         </a>
                     </li>

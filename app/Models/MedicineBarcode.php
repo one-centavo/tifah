@@ -13,6 +13,18 @@ class MedicineBarcode extends Model
 
     protected $fillable = ['medicine_id', 'barcode', 'is_main', 'created_by', 'updated_by', 'deleted_by'];
 
+    /**
+     * Get the attributes that should be cast.
+     *
+     * @return array<string, string>
+     */
+    protected function casts(): array
+    {
+        return [
+            'is_main' => 'boolean',
+        ];
+    }
+
     public function medicine()
     {
         return $this->belongsTo(Medicine::class);

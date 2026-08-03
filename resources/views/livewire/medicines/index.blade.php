@@ -1,0 +1,798 @@
+<?php
+
+declare(strict_types=1);
+
+use App\Models\Category;
+use App\Models\Laboratory;
+use App\Models\Medicine;
+use App\Services\MedicineService;
+use Illuminate\Validation\ValidationException;
+use Livewire\Attributes\Layout;
+use Livewire\Volt\Component;
+use Livewire\WithPagination;
+
+new #[Layout('layouts.app')] class extends Component
+{
+    use WithPagination;
+
+    public string $search = '';
+
+    public string $softDeleteFilter = 'active';
+
+    public string $categoryFilter = 'all';
+
+    public string $laboratoryFilter = 'all';
+
+    public string $coldChainFilter = 'all';
+
+    public string $specialControlFilter = 'all';
+
+    public string $stockAlertFilter = 'all';
+
+    public string $sortField = 'name';
+
+    public string $sortDirection = 'asc';
+
+    public ?int $medicineIdBeingDeleted = null;
+
+    public string $medicineNameBeingDeleted = '';
+
+    public ?int $selectedMedicineId = null;
+
+    /**
+     * Reset pagination page when filters are updated.
+     */
+    public function updatingSearch(): void
+    {
+        $this->resetPage();
+    }
+
+    public function updatingSoftDeleteFilter(): void
+    {
+        $this->resetPage();
+    }
+
+    public function updatingCategoryFilter(): void
+    {
+        $this->resetPage();
+    }
+
+    public function updatingLaboratoryFilter(): void
+    {
+        $this->resetPage();
+    }
+
+    public function updatingColdChainFilter(): void
+    {
+        $this->resetPage();
+    }
+
+    public function updatingSpecialControlFilter(): void
+    {
+        $this->resetPage();
+    }
+
+    public function updatingStockAlertFilter(): void
+    {
+        $this->resetPage();
+    }
+
+    /**
+     * Handle column sorting.
+     */
+    public function sortBy(string $field): void
+    {
+        if ($this->sortField === $field) {
+            $this->sortDirection = $this->sortDirection === 'asc' ? 'desc' : 'asc';
+        } else {
+            $this->sortField = $field;
+            $this->sortDirection = 'asc';
+        }
+    }
+
+    /**
+     * Show the medicine details.
+     */
+    public function viewDetails(int $id): void
+    {
+        $this->selectedMedicineId = $id;
+        $this->dispatch('open-modal', 'medicine-detail-modal');
+    }
+
+    /**
+     * Confirm the medicine deletion.
+     */
+    public function confirmMedicineDeletion(int $id): void
+    {
+        $medicine = Medicine::findOrFail($id);
+        $this->medicineIdBeingDeleted = $medicine->id;
+        $this->medicineNameBeingDeleted = $medicine->name;
+        $this->resetErrorBag();
+        $this->dispatch('open-modal', 'confirm-medicine-deletion');
+    }
+
+    /**
+     * Delete/Archive a medicine.
+     */
+    public function deleteMedicine(MedicineService $service): void
+    {
+        if (! $this->medicineIdBeingDeleted) {
+            return;
+        }
+
+        $medicine = Medicine::findOrFail($this->medicineIdBeingDeleted);
+
+        try {
+            $service->delete($medicine);
+
+            $this->dispatch('close-modal', 'confirm-medicine-deletion');
+            $this->reset(['medicineIdBeingDeleted', 'medicineNameBeingDeleted']);
+
+            session()->flash('success', 'El medicamento ha sido eliminado con éxito.');
+        } catch (ValidationException $e) {
+            foreach ($e->errors() as $key => $messages) {
+                foreach ($messages as $message) {
+                    $this->addError('deletion_error', $message);
+                }
+            }
+        }
+    }
+
+    /**
+     * Reset all active filters to their default values.
+     */
+    public function resetFilters(): void
+    {
+        $this->reset([
+            'search',
+            'categoryFilter',
+            'laboratoryFilter',
+            'coldChainFilter',
+            'specialControlFilter',
+            'stockAlertFilter',
+            'softDeleteFilter',
+        ]);
+        $this->resetPage();
+    }
+
+    /**
+     * Get the medicines with pagination and filters.
+     */
+    public function with(): array
+    {
+        $query = Medicine::query()
+            ->with(['category', 'laboratory', 'sanitaryRegistry', 'container', 'contentUnit', 'barcodes', 'lots']);
+
+        // 1. Soft Delete Filter
+        if ($this->softDeleteFilter === 'active') {
+            // Default active, standard behavior
+        } elseif ($this->softDeleteFilter === 'archived') {
+            $query->onlyTrashed();
+        } elseif ($this->softDeleteFilter === 'all') {
+            $query->withTrashed();
+        }
+
+        // 2. Category Filter
+        if ($this->categoryFilter !== 'all') {
+            $query->where('category_id', $this->categoryFilter);
+        }
+
+        // 3. Laboratory Filter
+        if ($this->laboratoryFilter !== 'all') {
+            $query->where('laboratory_id', $this->laboratoryFilter);
+        }
+
+        // 4. Cold Chain Filter
+        if ($this->coldChainFilter === 'yes') {
+            $query->where('is_cold_chain', true);
+        } elseif ($this->coldChainFilter === 'no') {
+            $query->where('is_cold_chain', false);
+        }
+
+        // 5. Special Control Filter
+        if ($this->specialControlFilter === 'yes') {
+            $query->where('is_special_control', true);
+        } elseif ($this->specialControlFilter === 'no') {
+            $query->where('is_special_control', false);
+        }
+
+        // 6. Stock Alert Filter
+        if ($this->stockAlertFilter === 'low') {
+            $query->whereRaw('(SELECT COALESCE(SUM(current_quantity), 0) FROM lots WHERE lots.medicine_id = medicines.id AND lots.deleted_at IS NULL) <= medicines.min_stock');
+        } elseif ($this->stockAlertFilter === 'out') {
+            $query->whereRaw('(SELECT COALESCE(SUM(current_quantity), 0) FROM lots WHERE lots.medicine_id = medicines.id AND lots.deleted_at IS NULL) = 0');
+        }
+
+        // 7. Search (Name, Generic Name, Barcode)
+        if (! empty(trim($this->search))) {
+            $searchTerm = '%'.trim($this->search).'%';
+            $query->where(function ($q) use ($searchTerm) {
+                $q->where('name', 'like', $searchTerm)
+                    ->orWhere('generic_name', 'like', $searchTerm)
+                    ->orWhereHas('barcodes', function ($b) use ($searchTerm) {
+                        $b->where('barcode', 'like', $searchTerm);
+                    });
+            });
+        }
+
+        // 8. Sorting
+        if ($this->sortField === 'category') {
+            $query->join('categories', 'medicines.category_id', '=', 'categories.id')
+                ->select('medicines.*')
+                ->orderBy('categories.name', $this->sortDirection);
+        } elseif ($this->sortField === 'laboratory') {
+            $query->join('laboratories', 'medicines.laboratory_id', '=', 'laboratories.id')
+                ->select('medicines.*')
+                ->orderBy('laboratories.name', $this->sortDirection);
+        } else {
+            $query->orderBy('medicines.'.$this->sortField, $this->sortDirection);
+        }
+
+        return [
+            'medicines' => $query->paginate(10),
+            'categories' => Category::orderBy('name')->get(),
+            'laboratories' => Laboratory::orderBy('name')->get(),
+            'selectedMedicine' => $this->selectedMedicineId
+                ? Medicine::withTrashed()->with(['category', 'laboratory', 'sanitaryRegistry', 'container', 'contentUnit', 'barcodes', 'lots', 'creator', 'updater', 'deleter'])->find($this->selectedMedicineId)
+                : null,
+        ];
+    }
+}; ?>
+
+<div class="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
+    <!-- Header -->
+    <div class="flex flex-col md:flex-row md:items-center md:justify-between mb-8 gap-4">
+        <div>
+            <h1 class="text-3xl font-extrabold text-blue-900 dark:text-white tracking-tight">Catálogo de Medicamentos</h1>
+            <p class="text-sm text-slate-600 dark:text-slate-400 mt-2">
+                Administra la información técnica de los medicamentos, sus presentaciones y códigos de barras vinculados.
+            </p>
+        </div>
+        <div>
+            <a href="{{ route('medicines.create') }}" wire:navigate
+                class="inline-flex items-center bg-blue-900 hover:bg-lime-500 hover:text-blue-950 text-white font-semibold px-5 py-3 rounded-xl shadow-md transition-all duration-200 ease-in-out gap-2 cursor-pointer transform hover:-translate-y-0.5">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"></path>
+                </svg>
+                <span>Nuevo Medicamento</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- Alert Success -->
+    @if (session()->has('success'))
+        <div class="mb-6 p-4 bg-lime-50 border border-lime-200 text-lime-800 rounded-xl flex items-center shadow-sm" role="alert" id="success-alert">
+            <svg class="w-5 h-5 mr-2 text-lime-600 shrink-0" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+            </svg>
+            <span class="font-medium">{{ session('success') }}</span>
+        </div>
+    @endif
+
+    <!-- Filters Section -->
+    <div class="bg-white border border-slate-100 shadow-sm rounded-2xl p-6 mb-6">
+        <h2 class="text-lg font-bold text-blue-900 mb-4">Filtrar Medicamentos</h2>
+        <div class="space-y-6">
+            <!-- Row 1: Search & Basic Selects -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <!-- Search field -->
+                <div>
+                    <label for="search" class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">Búsqueda</label>
+                    <div class="relative">
+                        <input type="text" id="search" wire:model.live.debounce.300ms="search" placeholder="Buscar por nombre, principio activo o código..."
+                            class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all">
+                        @if($search)
+                            <button type="button" wire:click="$set('search', '')" class="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"></path>
+                                </svg>
+                            </button>
+                        @endif
+                    </div>
+                </div>
+
+                <!-- Category Filter -->
+                <div>
+                    <label for="categoryFilter" class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">Categoría</label>
+                    <select id="categoryFilter" wire:model.live="categoryFilter"
+                        class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all cursor-pointer">
+                        <option value="all">Todas</option>
+                        @foreach($categories as $category)
+                            <option value="{{ $category->id }}">{{ $category->name }}</option>
+                        @endforeach
+                    </select>
+                </div>
+
+                <!-- Laboratory Filter -->
+                <div>
+                    <label for="laboratoryFilter" class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">Laboratorio</label>
+                    <select id="laboratoryFilter" wire:model.live="laboratoryFilter"
+                        class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all cursor-pointer">
+                        <option value="all">Todos</option>
+                        @foreach($laboratories as $lab)
+                            <option value="{{ $lab->id }}">{{ $lab->name }}</option>
+                        @endforeach
+                    </select>
+                </div>
+
+                <!-- Soft Delete filter -->
+                <div>
+                    <label for="softDeleteFilter" class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">Visibilidad en Catálogo</label>
+                    <select id="softDeleteFilter" wire:model.live="softDeleteFilter"
+                        class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all cursor-pointer">
+                        <option value="active">Sí (Activos)</option>
+                        <option value="archived">No (Eliminados)</option>
+                        <option value="all">Todos</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Row 2: Advanced Logistics/Supply Selectors & Reset -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <!-- Cold Chain Toggle -->
+                <div>
+                    <span class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">Cadena de Frío</span>
+                    <div class="inline-flex rounded-xl p-0.5 bg-slate-100 border border-slate-200 w-full">
+                        <button type="button" wire:click="$set('coldChainFilter', 'all')" 
+                            class="flex-1 text-center py-1.5 rounded-lg text-xs font-semibold transition-all duration-150 {{ $coldChainFilter === 'all' ? 'bg-white text-blue-900 shadow-sm' : 'text-slate-500 hover:text-slate-800' }}">
+                            Todos
+                        </button>
+                        <button type="button" wire:click="$set('coldChainFilter', 'yes')" 
+                            class="flex-1 text-center py-1.5 rounded-lg text-xs font-semibold transition-all duration-150 {{ $coldChainFilter === 'yes' ? 'bg-white text-blue-900 shadow-sm' : 'text-slate-500 hover:text-slate-800' }}">
+                            Sí
+                        </button>
+                        <button type="button" wire:click="$set('coldChainFilter', 'no')" 
+                            class="flex-1 text-center py-1.5 rounded-lg text-xs font-semibold transition-all duration-150 {{ $coldChainFilter === 'no' ? 'bg-white text-blue-900 shadow-sm' : 'text-slate-500 hover:text-slate-800' }}">
+                            No
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Special Control Toggle -->
+                <div>
+                    <span class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">Control Especial</span>
+                    <div class="inline-flex rounded-xl p-0.5 bg-slate-100 border border-slate-200 w-full">
+                        <button type="button" wire:click="$set('specialControlFilter', 'all')" 
+                            class="flex-1 text-center py-1.5 rounded-lg text-xs font-semibold transition-all duration-150 {{ $specialControlFilter === 'all' ? 'bg-white text-blue-900 shadow-sm' : 'text-slate-500 hover:text-slate-800' }}">
+                            Todos
+                        </button>
+                        <button type="button" wire:click="$set('specialControlFilter', 'yes')" 
+                            class="flex-1 text-center py-1.5 rounded-lg text-xs font-semibold transition-all duration-150 {{ $specialControlFilter === 'yes' ? 'bg-white text-blue-900 shadow-sm' : 'text-slate-500 hover:text-slate-800' }}">
+                            Sí
+                        </button>
+                        <button type="button" wire:click="$set('specialControlFilter', 'no')" 
+                            class="flex-1 text-center py-1.5 rounded-lg text-xs font-semibold transition-all duration-150 {{ $specialControlFilter === 'no' ? 'bg-white text-blue-900 shadow-sm' : 'text-slate-500 hover:text-slate-800' }}">
+                            No
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Stock Alert Filter -->
+                <div>
+                    <span class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">Alerta de Inventario</span>
+                    <div class="inline-flex rounded-xl p-0.5 bg-slate-100 border border-slate-200 w-full">
+                        <button type="button" wire:click="$set('stockAlertFilter', 'all')" 
+                            class="flex-1 text-center py-1.5 rounded-lg text-xs font-semibold transition-all duration-150 {{ $stockAlertFilter === 'all' ? 'bg-white text-blue-900 shadow-sm' : 'text-slate-500 hover:text-slate-800' }}">
+                            Todos
+                        </button>
+                        <button type="button" wire:click="$set('stockAlertFilter', 'low')" 
+                            class="flex-1 text-center py-1.5 rounded-lg text-xs font-semibold transition-all duration-150 {{ $stockAlertFilter === 'low' ? 'bg-white text-blue-900 shadow-sm' : 'text-slate-500 hover:text-slate-800' }}">
+                            Bajo Stock
+                        </button>
+                        <button type="button" wire:click="$set('stockAlertFilter', 'out')" 
+                            class="flex-1 text-center py-1.5 rounded-lg text-xs font-semibold transition-all duration-150 {{ $stockAlertFilter === 'out' ? 'bg-white text-blue-900 shadow-sm' : 'text-slate-500 hover:text-slate-800' }}">
+                            Agotados
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Clear Filters Button -->
+                <div class="flex items-end">
+                    <button type="button" wire:click="resetFilters" 
+                        class="w-full bg-slate-50 border border-slate-200 hover:bg-slate-100 hover:text-blue-950 text-slate-600 font-semibold px-4 py-2.5 rounded-xl text-sm transition-all duration-150 ease-in-out cursor-pointer flex items-center justify-center gap-1.5 shadow-sm">
+                        <svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99"></path>
+                        </svg>
+                        <span>Limpiar Filtros</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Card Table -->
+    <div class="bg-white border border-slate-100 shadow-sm rounded-2xl overflow-hidden">
+        @if(Medicine::withTrashed()->count() === 0)
+            <div class="p-12 text-center">
+                <div class="inline-flex p-4 bg-slate-50 text-slate-400 rounded-full mb-4">
+                    <svg class="w-12 h-12" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M9.75 9.75l4.5 4.5m0-4.5l-4.5 4.5M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                </div>
+                <h3 class="text-lg font-bold text-blue-900 mb-1">No hay medicamentos registrados</h3>
+                <p class="text-sm text-slate-500 mb-6">Comienza registrando el primer medicamento en el catálogo.</p>
+                <a href="{{ route('medicines.create') }}" wire:navigate
+                    class="inline-flex items-center bg-blue-900 hover:bg-lime-500 hover:text-blue-950 text-white font-semibold px-4 py-2.5 rounded-lg transition-colors cursor-pointer">
+                    Registrar Medicamento
+                </a>
+            </div>
+        @elseif($medicines->isEmpty())
+            <div class="p-12 text-center">
+                <div class="inline-flex p-4 bg-amber-50 text-amber-500 rounded-full mb-4">
+                    <svg class="w-12 h-12" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z"></path>
+                    </svg>
+                </div>
+                <h3 class="text-lg font-bold text-blue-900 mb-1">Sin resultados</h3>
+                <p class="text-sm text-slate-500">No se encontraron medicamentos que coincidan con los filtros aplicados</p>
+            </div>
+        @else
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-slate-100">
+                    <thead class="bg-slate-50">
+                        <tr>
+                            <th scope="col" class="px-6 py-4 text-left text-xs font-bold text-blue-900 uppercase tracking-wider">Código(s) de Barras</th>
+                            <th scope="col" class="px-6 py-4 text-left text-xs font-bold text-blue-900 uppercase tracking-wider">
+                                <button type="button" wire:click="sortBy('name')" class="flex items-center gap-1 hover:text-blue-700 font-bold uppercase tracking-wider focus:outline-none">
+                                    <span>Nombre Comercial</span>
+                                    @if($sortField === 'name')
+                                        @if($sortDirection === 'asc')
+                                            <svg class="w-3.5 h-3.5 text-blue-900" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 15.75l7.5-7.5 7.5 7.5"></path>
+                                            </svg>
+                                        @else
+                                            <svg class="w-3.5 h-3.5 text-blue-900" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5"></path>
+                                            </svg>
+                                        @endif
+                                    @else
+                                        <svg class="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 15L12 18.75 15.75 15m-7.5-6L12 5.25 15.75 9"></path>
+                                        </svg>
+                                    @endif
+                                </button>
+                            </th>
+                            <th scope="col" class="px-6 py-4 text-left text-xs font-bold text-blue-900 uppercase tracking-wider">Nombre Genérico</th>
+                            <th scope="col" class="px-6 py-4 text-left text-xs font-bold text-blue-900 uppercase tracking-wider">Concentración</th>
+                            <th scope="col" class="px-6 py-4 text-left text-xs font-bold text-blue-900 uppercase tracking-wider">Presentación</th>
+                            <th scope="col" class="px-6 py-4 text-left text-xs font-bold text-blue-900 uppercase tracking-wider">
+                                <button type="button" wire:click="sortBy('category')" class="flex items-center gap-1 hover:text-blue-700 font-bold uppercase tracking-wider focus:outline-none">
+                                    <span>Categoría</span>
+                                    @if($sortField === 'category')
+                                        @if($sortDirection === 'asc')
+                                            <svg class="w-3.5 h-3.5 text-blue-900" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 15.75l7.5-7.5 7.5 7.5"></path>
+                                            </svg>
+                                        @else
+                                            <svg class="w-3.5 h-3.5 text-blue-900" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5"></path>
+                                            </svg>
+                                        @endif
+                                    @else
+                                        <svg class="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 15L12 18.75 15.75 15m-7.5-6L12 5.25 15.75 9"></path>
+                                        </svg>
+                                    @endif
+                                </button>
+                            </th>
+                            <th scope="col" class="px-6 py-4 text-left text-xs font-bold text-blue-900 uppercase tracking-wider">Laboratorio</th>
+                            <th scope="col" class="px-6 py-4 text-center text-xs font-bold text-blue-900 uppercase tracking-wider">Logística</th>
+                            <th scope="col" class="px-6 py-4 text-right text-xs font-bold text-blue-900 uppercase tracking-wider">Precio de Venta</th>
+                            <th scope="col" class="px-6 py-4 text-center text-xs font-bold text-blue-900 uppercase tracking-wider">Stock Actual / Alerta</th>
+                            <th scope="col" class="px-6 py-4 text-right text-xs font-bold text-blue-900 uppercase tracking-wider">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-slate-100">
+                        @foreach($medicines as $medicine)
+                            <tr class="hover:bg-slate-50/50 transition-colors" wire:key="medicine-{{ $medicine->id }}">
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
+                                    @if($mainBar = $medicine->barcodes->firstWhere('is_main', true))
+                                        <span class="inline-block bg-slate-100 text-slate-800 rounded px-2 py-0.5 text-xs font-mono border border-blue-200 font-bold" title="Código Principal">
+                                            {{ $mainBar->barcode }}
+                                        </span>
+                                    @else
+                                        <span class="text-slate-400">N/A</span>
+                                    @endif
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold text-blue-950">
+                                    {{ $medicine->name }}
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
+                                    {{ $medicine->generic_name ?: 'N/A' }}
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-600">
+                                    {{ $medicine->concentration_formatted }}
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-600">
+                                    {{ $medicine->presentation }}
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
+                                    {{ $medicine->category->name ?? 'N/A' }}
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-600">
+                                    {{ $medicine->laboratory->name ?? 'N/A' }}
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-center text-sm space-y-1">
+                                    @if($medicine->is_cold_chain)
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-cyan-50 text-cyan-800 border border-cyan-200">
+                                            Frío
+                                        </span>
+                                    @endif
+                                    @if($medicine->is_special_control)
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-purple-50 text-purple-800 border border-purple-200">
+                                            Control Especial
+                                        </span>
+                                    @endif
+                                    @if(!$medicine->is_cold_chain && !$medicine->is_special_control)
+                                        <span class="text-slate-400 text-xs">-</span>
+                                    @endif
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-semibold text-slate-800">
+                                    ${{ number_format((float) $medicine->selling_price, 2) }}
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
+                                    @php
+                                        $totalStock = $medicine->lots->sum('current_quantity');
+                                        $isAlert = $totalStock <= $medicine->min_stock;
+                                    @endphp
+                                    <div class="flex items-center justify-center gap-1.5">
+                                        <span class="font-bold {{ $isAlert ? 'text-amber-600 dark:text-amber-400' : 'text-slate-800 dark:text-slate-200' }}">
+                                            {{ number_format($totalStock, 0) }}
+                                        </span>
+                                        @if($isAlert)
+                                            <span class="inline-flex items-center px-1.5 py-0.5 rounded-md text-[10px] font-bold bg-amber-50 text-amber-800 border border-amber-200" title="Stock igual o inferior al mínimo (Mín: {{ $medicine->min_stock }})">
+                                                <svg class="w-3.5 h-3.5 mr-0.5 text-amber-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                                                </svg>
+                                                Alerta
+                                            </span>
+                                        @endif
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                    <div class="flex justify-end gap-3 items-center">
+                                        <button type="button" 
+                                            wire:click="viewDetails({{ $medicine->id }})"
+                                            class="inline-flex items-center text-slate-600 hover:text-blue-900 transition-colors gap-1 cursor-pointer"
+                                            title="Ver Detalle">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z"></path>
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                            </svg>
+                                            <span>Ver Detalle</span>
+                                        </button>
+
+                                        @if(!$medicine->trashed())
+                                            <a href="{{ route('medicines.edit', $medicine->id) }}" wire:navigate
+                                                class="inline-flex items-center text-blue-600 hover:text-blue-900 transition-colors gap-1 cursor-pointer">
+                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10"></path>
+                                                </svg>
+                                                <span>Editar</span>
+                                            </a>
+                                            <button type="button" 
+                                                wire:click="confirmMedicineDeletion({{ $medicine->id }})"
+                                                class="inline-flex items-center text-red-600 hover:text-red-900 transition-colors gap-1 cursor-pointer"
+                                                title="Archivar">
+                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0"></path>
+                                                </svg>
+                                                <span>Archivar</span>
+                                            </button>
+                                        @else
+                                            <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold bg-slate-100 text-slate-700 border border-slate-200">
+                                                Archivado
+                                            </span>
+                                        @endif
+                                    </div>
+                                </td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Pagination -->
+            <div class="px-6 py-4 bg-slate-50 border-t border-slate-100">
+                {{ $medicines->links() }}
+            </div>
+        @endif
+    </div>
+
+    <!-- Deletion Confirmation Modal -->
+    <x-modal name="confirm-medicine-deletion" focusable>
+        <div class="p-6">
+            <h2 class="text-lg font-bold text-blue-900">
+                ¿Está seguro de que desea eliminar el medicamento?
+            </h2>
+
+            <p class="mt-2 text-sm text-slate-600 font-normal">
+                Esta acción archivará el medicamento <span class="font-semibold text-blue-950">"{{ $medicineNameBeingDeleted }}"</span>. Se mantendrá en el historial de la base de datos pero se ocultará de las consultas operativas.
+            </p>
+
+            <x-input-error :messages="$errors->get('deletion_error')" class="mt-4" />
+
+            <div class="mt-6 flex justify-end gap-3">
+                <x-secondary-button x-on:click="$dispatch('close')" class="cursor-pointer">
+                    Cancelar
+                </x-secondary-button>
+
+                <x-danger-button wire:click="deleteMedicine" class="cursor-pointer">
+                    Eliminar
+                </x-danger-button>
+            </div>
+        </div>
+    </x-modal>
+
+    <!-- Medicine Detail Modal -->
+    <x-modal name="medicine-detail-modal" focusable>
+        @if($selectedMedicine)
+            <div class="p-6">
+                <!-- Header -->
+                <div class="border-b border-slate-100 pb-4 mb-6">
+                    <h2 class="text-2xl font-extrabold text-blue-900 dark:text-white">
+                        {{ $selectedMedicine->name }}
+                    </h2>
+                    <p class="text-sm font-semibold text-slate-500 mt-1">
+                        Principio Activo: <span class="text-blue-950">{{ $selectedMedicine->generic_name ?: 'N/A' }}</span>
+                    </p>
+                </div>
+
+                <!-- Info Grid -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Col 1: Technical specs -->
+                    <div class="space-y-4">
+                        <h3 class="text-sm font-bold uppercase tracking-wider text-slate-400">Especificaciones Técnicas</h3>
+                        <div class="bg-slate-50 dark:bg-slate-900 rounded-xl p-4 space-y-3">
+                            <div>
+                                <span class="block text-xs text-slate-500 font-medium">Concentración</span>
+                                <span class="text-sm font-semibold text-slate-800 dark:text-slate-200">{{ $selectedMedicine->concentration_formatted }}</span>
+                            </div>
+                            <div>
+                                <span class="block text-xs text-slate-500 font-medium">Presentación</span>
+                                <span class="text-sm font-semibold text-slate-800 dark:text-slate-200">{{ $selectedMedicine->presentation }}</span>
+                            </div>
+                            <div>
+                                <span class="block text-xs text-slate-500 font-medium">Laboratorio</span>
+                                <span class="text-sm font-semibold text-slate-800 dark:text-slate-200">{{ $selectedMedicine->laboratory?->name ?? 'N/A' }}</span>
+                            </div>
+                            <div>
+                                <span class="block text-xs text-slate-500 font-medium">Registro Sanitario INVIMA</span>
+                                <span class="text-sm font-semibold text-slate-800 dark:text-slate-200">{{ $selectedMedicine->sanitaryRegistry?->registration_number ?? 'N/A' }}</span>
+                                @if($selectedMedicine->sanitaryRegistry?->expiration_date)
+                                    <span class="block text-xs text-slate-400 mt-0.5">Expira: {{ \Carbon\Carbon::parse($selectedMedicine->sanitaryRegistry->expiration_date)->format('d/m/Y') }}</span>
+                                @endif
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Col 2: Stock, prices, logistics -->
+                    <div class="space-y-4">
+                        <h3 class="text-sm font-bold uppercase tracking-wider text-slate-400">Inventario y Control</h3>
+                        <div class="bg-slate-50 dark:bg-slate-900 rounded-xl p-4 space-y-3">
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <span class="block text-xs text-slate-500 font-medium">Precio de Venta</span>
+                                    <span class="text-sm font-bold text-slate-800 dark:text-slate-200">${{ number_format((float) $selectedMedicine->selling_price, 2) }}</span>
+                                </div>
+                                <div>
+                                    @php
+                                        $selTotalStock = $selectedMedicine->lots->sum('current_quantity');
+                                        $selIsAlert = $selTotalStock <= $selectedMedicine->min_stock;
+                                    @endphp
+                                    <span class="block text-xs text-slate-500 font-medium">Stock Actual</span>
+                                    <div class="flex items-center gap-1.5 mt-0.5">
+                                        <span class="text-sm font-bold {{ $selIsAlert ? 'text-amber-600' : 'text-slate-800 dark:text-slate-200' }}">
+                                            {{ number_format($selTotalStock, 0) }}
+                                        </span>
+                                        @if($selIsAlert)
+                                            <span class="inline-flex items-center px-1.5 py-0.5 rounded-md text-[9px] font-bold bg-amber-50 text-amber-800 border border-amber-200">
+                                                Alerta
+                                            </span>
+                                        @endif
+                                    </div>
+                                    <span class="block text-[10px] text-slate-400">Mínimo: {{ number_format($selectedMedicine->min_stock, 0) }}</span>
+                                </div>
+                            </div>
+
+                            <div class="border-t border-slate-100 dark:border-slate-800 pt-3">
+                                <span class="block text-xs text-slate-500 font-medium mb-1">Alertas y Controles Especiales</span>
+                                <div class="flex flex-wrap gap-2">
+                                    @if($selectedMedicine->is_cold_chain)
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-cyan-50 text-cyan-800 border border-cyan-200">
+                                            Requiere Cadena de Frío
+                                        </span>
+                                    @endif
+                                    @if($selectedMedicine->is_special_control)
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-purple-50 text-purple-800 border border-purple-200">
+                                            Sujeto a Control Especial
+                                        </span>
+                                    @endif
+                                    @if(!$selectedMedicine->is_cold_chain && !$selectedMedicine->is_special_control)
+                                        <span class="text-xs text-slate-400 italic">Sin controles especiales regulados.</span>
+                                    @endif
+                                </div>
+                            </div>
+
+                            <div>
+                                <span class="block text-xs text-slate-500 font-medium">Categoría</span>
+                                <span class="text-sm font-semibold text-slate-800 dark:text-slate-200">{{ $selectedMedicine->category?->name ?? 'N/A' }}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Barcodes List -->
+                <div class="mt-6 space-y-2">
+                    <h3 class="text-sm font-bold uppercase tracking-wider text-slate-400">Códigos de Barras</h3>
+                    <div class="bg-slate-50 dark:bg-slate-900 rounded-xl p-4 flex flex-wrap gap-2">
+                        @forelse($selectedMedicine->barcodes as $bar)
+                            <div class="inline-flex items-center rounded-lg bg-white dark:bg-slate-800 border {{ $bar->is_main ? 'border-blue-300 ring-2 ring-blue-100' : 'border-slate-200' }} px-3 py-1.5">
+                                <span class="text-xs font-mono text-slate-800 dark:text-slate-200 font-semibold">{{ $bar->barcode }}</span>
+                                @if($bar->is_main)
+                                    <span class="ml-1.5 text-[9px] font-bold uppercase tracking-wider bg-blue-50 text-blue-800 px-1 py-0.5 rounded">Principal</span>
+                                @endif
+                            </div>
+                        @empty
+                            <span class="text-xs text-slate-400 italic">No hay códigos de barras asociados.</span>
+                        @endforelse
+                    </div>
+                </div>
+
+                <!-- Description -->
+                <div class="mt-6 space-y-2">
+                    <h3 class="text-sm font-bold uppercase tracking-wider text-slate-400">Descripción / Notas</h3>
+                    <div class="bg-slate-50 dark:bg-slate-900 rounded-xl p-4 text-sm text-slate-700 dark:text-slate-300 whitespace-pre-line leading-relaxed">
+                        {{ $selectedMedicine->description ?: 'Sin descripción disponible.' }}
+                    </div>
+                </div>
+
+                <!-- Audit info -->
+                <div class="mt-6 border-t border-slate-100 dark:border-slate-800 pt-4 space-y-2 text-[11px] text-slate-400">
+                    <div class="flex flex-col sm:flex-row justify-between gap-2">
+                        <span>Registrado por: <strong>{{ $selectedMedicine->creator?->name ?? 'N/A' }}</strong> el {{ $selectedMedicine->created_at?->format('d/m/Y H:i') ?? 'N/A' }}</span>
+                        @if($selectedMedicine->updated_by)
+                            <span>Última modificación: <strong>{{ $selectedMedicine->updater?->name ?? 'N/A' }}</strong> el {{ $selectedMedicine->updated_at?->format('d/m/Y H:i') ?? 'N/A' }}</span>
+                        @endif
+                    </div>
+                    @if($selectedMedicine->deleted_at)
+                        <div class="text-rose-600 bg-rose-50/50 dark:bg-rose-950/20 px-3 py-1.5 rounded-lg border border-rose-100 dark:border-rose-900/50">
+                            Eliminado por: <strong>{{ $selectedMedicine->deleter?->name ?? 'N/A' }}</strong> el {{ $selectedMedicine->deleted_at->format('d/m/Y H:i') }}
+                        </div>
+                    @endif
+                </div>
+
+                <!-- Footer Actions -->
+                <div class="mt-8 flex flex-col sm:flex-row sm:justify-between items-center gap-3 border-t border-slate-100 dark:border-slate-800 pt-4">
+                    <div>
+                        @if(!$selectedMedicine->deleted_at)
+                            <div class="flex gap-2">
+                                <a href="{{ route('medicines.edit', $selectedMedicine->id) }}" wire:navigate
+                                    class="inline-flex items-center bg-blue-50 text-blue-700 hover:bg-blue-100 font-semibold px-4 py-2 rounded-xl text-xs transition-colors duration-200 gap-1 cursor-pointer">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10"></path>
+                                    </svg>
+                                    <span>Editar</span>
+                                </a>
+
+                                <button type="button" 
+                                    x-on:click="$dispatch('close')"
+                                    wire:click="confirmMedicineDeletion({{ $selectedMedicine->id }})"
+                                    class="inline-flex items-center bg-rose-50 text-rose-700 hover:bg-rose-100 font-semibold px-4 py-2 rounded-xl text-xs transition-colors duration-200 gap-1 cursor-pointer">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0"></path>
+                                    </svg>
+                                    <span>Archivar</span>
+                                </button>
+                            </div>
+                        @endif
+                    </div>
+
+                    <x-secondary-button x-on:click="$dispatch('close')" class="cursor-pointer">
+                        Cerrar Detalle
+                    </x-secondary-button>
+                </div>
+            </div>
+        @endif
+    </x-modal>
+</div>

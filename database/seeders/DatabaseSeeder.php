@@ -25,12 +25,14 @@ class DatabaseSeeder extends Seeder
 
         $this->call([
             CategorySeeder::class,
+            SupplierSeeder::class,
             LaboratorySeeder::class,
             SanitaryRegistrySeeder::class,
             ConcentrationUnitSeeder::class,
             ContainerSeeder::class,
             ContentUnitSeeder::class,
             MedicineSeeder::class,
+            MedicineBarcodeSeeder::class,
         ]);
     }
 }

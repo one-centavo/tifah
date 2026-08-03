@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -12,6 +13,18 @@ class Medicine extends Model
     use SoftDeletes;
 
     protected $fillable = ['category_id', 'laboratory_id', 'sanitary_registry_id', 'name', 'generic_name', 'concentration_value', 'concentration_unit_id', 'container_id', 'content_quantity', 'content_unit_id', 'is_cold_chain', 'is_special_control', 'min_stock', 'selling_price', 'description', 'created_by', 'updated_by', 'deleted_by'];
+
+    protected function presentation(): Attribute
+    {
+        return Attribute::make(
+            get: fn () => sprintf(
+                '%s x %d %s',
+                $this->container?->name ?? 'N/A',
+                $this->content_quantity,
+                $this->contentUnit?->name ?? 'N/A'
+            )
+        );
+    }
 
     public function category()
     {
@@ -71,5 +84,33 @@ class Medicine extends Model
     public function lots()
     {
         return $this->hasMany(Lot::class);
+    }
+
+    public function hasLotsOrSales(): bool
+    {
+        return $this->lots()->exists() || $this->lots()->whereHas('billDetails')->exists();
+    }
+
+    protected function totalStock(): Attribute
+    {
+        return Attribute::make(
+            get: fn () => $this->lots()->sum('current_quantity')
+        );
+    }
+
+    public function hasActiveLots(): bool
+    {
+        return $this->lots()->where('status', 'active')->where('current_quantity', '>', 0)->exists();
+    }
+
+    protected function concentrationFormatted(): Attribute
+    {
+        return Attribute::make(
+            get: fn () => sprintf(
+                '%s %s',
+                (float) $this->concentration_value,
+                $this->concentrationUnit?->symbol ?? ''
+            )
+        );
     }
 }
