@@ -1,10 +1,10 @@
-# 020 · Inventory Dashboard (HU 26)
+# 020 · Inventory (HU 26)
 
-**Status:** Draft
+**Status:** Completed
 
 ## What it does
 
-Provides a consolidated, high-level Inventory Dashboard at `/inventory-dashboard` where Warehouse Assistants can view a summary of all medicines, their total accumulated stock across all active batches, and their active lot counts. It includes a search bar to filter medicines by name or barcode, and a "View Detail" action that redirects the user to the Level 2 (Lots List) of the selected medicine. This view is strictly focused on stock management and does not display any sales prices.
+Provides a consolidated, high-level Inventory page at `/inventory` (`inventory.index`) under the default **Inventario** tab, where Warehouse Assistants can view a summary of all medicines, their total accumulated stock across all active batches, and their active lot counts. It includes a search bar to filter medicines by name or barcode, and a "View Detail" (`Ver Detalle`) action that redirects the user to the Level 2 page showing the lot breakdown for the selected medicine. This view is strictly focused on stock management and does not display any sales prices.
 
 ## Why
 
@@ -12,8 +12,8 @@ To allow Warehouse Assistants to have a panoramic, real-time overview of current
 
 ## Acceptance criteria
 
-### 1. Consolidated Inventory Table
-The dashboard must display a table listing all medicines with the following columns:
+### 1. Consolidated Inventory Table (Level 1)
+The primary tab "Inventario" must display a table listing all medicines with the following columns:
 - **Commercial Name** (`Nombre Comercial`)
 - **Generic Name** (`Nombre Genérico`)
 - **Concentration** (`Concentración`)
@@ -34,12 +34,11 @@ The dashboard must display a table listing all medicines with the following colu
 - Users must be able to search/filter the list of medicines dynamically by their **Commercial Name**, **Generic Name**, or **Barcode**.
 
 ### 5. Detail Navigation (Level 2 Redirect)
-- Clicking the "View Detail" (`Ver Detalle`) button for a medicine must redirect the user to Level 2 (Lots List page/component) showing the detailed list of batches/lots specifically for that medicine (e.g., `/inventory/medicines/{medicine}/lots`).
+- Clicking the "View Detail" (`Ver Detalle`) button for a medicine must redirect the user to Level 2 (Lots List page) showing the detailed list of batches/lots specifically for that medicine at `/inventory/medicines/{medicine}/lots`.
 
 ### 6. Exclusion of Sales Prices
-- To maintain the focus entirely on physical stock management, the dashboard table must **not** display sales prices or any pricing details.
+- To maintain the focus entirely on physical stock management, the consolidated inventory table and the Level 2 lots table must **not** display sales prices or any pricing details.
 
 ## Out of scope
-- Editing medicines or lots from this dashboard.
-- Registering new incoming shipments (handled in merchandise reception).
+- Bulk uploading categories or medicines.
 - Exporting the summary list to CSV/Excel (handled in a separate report feature).

@@ -1,61 +1,70 @@
-# 020 · Inventory Dashboard — Plan
+# 020 · Inventory — Plan
 
 ## Approach
 
-We will implement a new Livewire Volt component for the Inventory Dashboard (`resources/views/livewire/inventory/dashboard.blade.php`) representing the route `/inventory-dashboard`. Since `/inventory` currently maps to `inventory.index` which houses "Control de Lotes" and "Recepción de Mercancía", we will define a separate route `/inventory-dashboard` (`inventory.dashboard`) and the Level 2 lots breakdown under `/inventory/medicines/{medicine}/lots`.
+We will replace the general "Control de Lotes" tab on `/inventory` (`inventory.index`) with a consolidated medicines list (Level 1) under the default tab "Inventario". We will retain the "Recepción de Mercancía" tab as it is for scanning and entering new merchandise lots. We will implement Level 2 (Lots list for a specific medicine) under `/inventory/medicines/{medicine}/lots` and move the lot deletion functionality (soft delete with modal confirmation) to this page to avoid redundancy.
 
 ---
 
-### 1. Volt Component (`App\Livewire\Inventory\Dashboard`)
+### 1. Tabbed Volt Component (`App\Livewire\Inventory\Index`)
 
-The component `inventory.dashboard` will handle searching and retrieving the list of medicines.
+The main component `inventory.index` will manage the tabs, searching, consolidated medicine list, and merchandise reception forms.
 
 - **State Properties:**
-  - `$searchTerm = '';`
-  - Pagination is supported (e.g., `WithPagination` trait).
-  - Reset pagination on updated search terms.
+  - `$activeTab = 'consolidated';` (Options: `'consolidated'` for the consolidated overview, `'reception'` for shipment entries).
+  - **Reception Form State:** Keep barcode, selected medicine details, temporary lots, and supplier registration inputs.
+  - **Consolidated Tab State:**
+    - `$search = '';`
+    - Pagination is supported. Reset page hooks will trigger when searching or switching tabs.
 
-- **Data Querying:**
-  - Query the `Medicine` model eager loading active `lots` (filtered by active status and not soft-deleted).
-  - Calculate `total_stock` and `active_lots_count` using query aggregates or collection mapping for performance.
-  - Search filter applies a query scope searching on `commercial_name`, `generic_name`, or the primary barcode.
-
----
-
-### 2. UI Layout Architecture
-
-The view `resources/views/livewire/inventory/dashboard.blade.php` will be styled with Tailwind CSS:
-- **Header:** Title "Dashboard de Inventario" and sub-description.
-- **Search Bar:** Simple input for dynamic search by name or barcode.
-- **Table:** Columns: Commercial Name, Generic Name, Concentration, Total Stock (Units), Active Lots Count, Actions.
-- **Actions:** A clear styled primary button/link "Ver Detalle" pointing to the Level 2 lots list.
-- **No Pricing:** Ensure no price columns or billing information is rendered.
+- **Component Methods:**
+  - `switchTab(string $tab)`: Toggles between `'consolidated'` and `'reception'`, preserving reception forms.
+  - `updatedBarcode()`: Triggers barcode lookup for merchandise entry.
+  - `addToTemporaryList()`, `editTemporaryLot()`, `removeTemporaryLot()`, `confirmReception()`, `cancelReception()`, `saveQuickSupplier()`: Retain existing business logic.
 
 ---
 
-### 3. Level 2 (Lots List for Medicine) Route and Component
-- We will define a Level 2 Volt component `inventory.medicine-lots` at `resources/views/livewire/inventory/medicine-lots.blade.php`.
-- The route will be `/inventory/medicines/{medicine}/lots` (`inventory.medicine-lots`).
-- This page displays the specific list of lots for the selected medicine, allowing the warehouse assistant to see the detailed breakdown.
+### 2. Level 2 Lots Component (`App\Livewire\Inventory\MedicineLots`)
+
+The Level 2 page displays the lot breakdown specifically for the selected medicine.
+
+- **State Properties:**
+  - `public Medicine $medicine;`
+  - Deletion modal fields: `$lotIdBeingDeleted`, `$lotBatchBeingDeleted`.
+
+- **Component Methods:**
+  - `confirmLotDeletion(int $id)`: Dispatches the confirmation modal.
+  - `deleteLot(LotService $lotService)`: Performs the soft delete and records the audit trails.
+
+---
+
+### 3. UI Layout Architecture
+
+- **Level 1 (consolidated tab):**
+  - Search bar.
+  - Table: Commercial Name, Generic Name, Concentration, Total Stock (Units), Active Lots Count, Actions.
+  - "Ver Detalle" redirects to Level 2 lots list.
+  - No sales prices are displayed.
+- **Level 2 (medicine-lots view):**
+  - Back button pointing to `/inventory`.
+  - Selected medicine metadata card (Generic Name, Concentration, Presentation).
+  - Table: Batch Number, Expiration Date, Current Quantity, Initial Quantity, Unit Purchase Cost, Supplier, Status, Actions (Delete/Eliminar).
+  - Confirmation Modal: Delete confirmation displaying batch details.
 
 ---
 
 ### 4. Routing & Sidebar Navigation
 
-- Add route `/inventory-dashboard` in `routes/web.php` inside the auth group:
-  - `Volt::route('inventory-dashboard', 'inventory.dashboard')->name('inventory.dashboard');`
-- Add route `/inventory/medicines/{medicine}/lots` in `routes/web.php` inside the auth group:
+- Sidenav pointing to `/inventory` (`inventory.index`) remains unchanged.
+- Register Level 2 route in `routes/web.php` inside the auth group:
   - `Volt::route('inventory/medicines/{medicine}/lots', 'inventory.medicine-lots')->name('inventory.medicine-lots');`
-- Update Sidenav:
-  - Add a link to the layout sidebar pointing to the new inventory dashboard.
 
 ---
 
 ### 5. PestPHP Testing Strategy
 
-We will write feature tests in `tests/Feature/Pages/Inventory/InventoryDashboardTest.php`:
-- **Access Control:** Guest redirect, Warehouse Assistant allowed.
-- **Dashboard Data:** Verifies the correct calculation of Total Stock (sum of active lot quantities) and Active Lots Count.
-- **Search Logic:** Verifies filtering medicines by commercial name, generic name, or barcode.
-- **Price Exclusion:** Asserts that the sales price is not displayed or present in the response content.
-- **Navigation:** Verifies the "Ver Detalle" action redirects to the correct Level 2 route.
+We will update feature tests in `tests/Feature/Pages/Inventory/InventoryManagementTest.php`:
+- **Consolidated View:** Verifies correct calculations of Total Stock and Active Lots Count, and dynamic search works.
+- **Level 2 Page:** Verifies guest redirects, lots listing details (batch, expiration, quantity, supplier), and soft-deleting a lot.
+- **Price Exclusion:** Asserts that sales prices are not rendered on Level 1 or Level 2 pages.
+- **Merchandise Entry:** Verifies reception forms and database persistence logic work.
