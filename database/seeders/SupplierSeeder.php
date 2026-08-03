@@ -26,7 +26,7 @@ class SupplierSeeder extends Seeder
         ];
 
         foreach ($suppliers as $name) {
-            if (!Supplier::where('name', $name)->exists()) {
+            if (! Supplier::where('name', $name)->exists()) {
                 Supplier::factory()->create([
                     'name' => $name,
                     'created_by' => $user->id,
