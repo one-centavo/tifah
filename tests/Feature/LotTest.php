@@ -4,6 +4,7 @@ use App\Models\Lot;
 use App\Models\Medicine;
 use App\Models\PurchaseOrder;
 use App\Models\User;
+use Database\Seeders\DatabaseSeeder;
 
 it('can create a lot using factory', function () {
     $lot = Lot::factory()->create();
@@ -26,4 +27,10 @@ it('can create a damaged lot using factory state', function () {
 
     expect($lot->status)->toBe('damaged');
     expect($lot->current_quantity)->toBe(0);
+});
+
+it('can seed lots using LotSeeder through DatabaseSeeder', function () {
+    $this->seed(DatabaseSeeder::class);
+
+    expect(Lot::count())->toBeGreaterThan(0);
 });
