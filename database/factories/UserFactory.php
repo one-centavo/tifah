@@ -30,6 +30,7 @@ class UserFactory extends Factory
             'phone_number' => fake()->numerify('##########'),
             'email' => fake()->unique()->safeEmail(),
             'password' => static::$password ??= Hash::make('password'),
+            'role' => 'warehouse_assistant',
             'remember_token' => Str::random(10),
         ];
     }
@@ -41,6 +42,16 @@ class UserFactory extends Factory
     {
         return $this->state(fn (array $attributes) => [
             // No email_verified_at column in the users table
+        ]);
+    }
+
+    /**
+     * Indicate that the user has the Administrator role.
+     */
+    public function admin(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'role' => 'admin',
         ]);
     }
 }
