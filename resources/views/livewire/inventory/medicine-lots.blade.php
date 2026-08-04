@@ -148,26 +148,6 @@ new #[Layout('layouts.app')] class extends Component
                         <tr>
                             <th scope="col" class="px-6 py-4 text-left text-xs font-bold text-blue-900 uppercase tracking-wider">Número de Lote</th>
                             <th scope="col" class="px-6 py-4 text-left text-xs font-bold text-blue-900 uppercase tracking-wider">
-                                <button type="button" wire:click="sortBy('reception_date')" class="flex items-center gap-1 hover:text-blue-700 font-bold uppercase tracking-wider focus:outline-none">
-                                    <span>Fecha de Ingreso</span>
-                                    @if($sortField === 'reception_date')
-                                        @if($sortDirection === 'asc')
-                                            <svg class="w-3.5 h-3.5 text-blue-900" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 15.75l7.5-7.5 7.5 7.5"></path>
-                                            </svg>
-                                        @else
-                                            <svg class="w-3.5 h-3.5 text-blue-900" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5"></path>
-                                            </svg>
-                                        @endif
-                                    @else
-                                        <svg class="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 15L12 18.75 15.75 15m-7.5-6L12 5.25 15.75 9"></path>
-                                        </svg>
-                                    @endif
-                                </button>
-                            </th>
-                            <th scope="col" class="px-6 py-4 text-left text-xs font-bold text-blue-900 uppercase tracking-wider">
                                 <button type="button" wire:click="sortBy('expiration_date')" class="flex items-center gap-1 hover:text-blue-700 font-bold uppercase tracking-wider focus:outline-none">
                                     <span>Fecha de Vencimiento</span>
                                     @if($sortField === 'expiration_date')
@@ -191,7 +171,6 @@ new #[Layout('layouts.app')] class extends Component
                             <th scope="col" class="px-6 py-4 text-center text-xs font-bold text-blue-900 uppercase tracking-wider">Cantidad Disponible</th>
                             <th scope="col" class="px-6 py-4 text-center text-xs font-bold text-blue-900 uppercase tracking-wider">Cantidad Inicial</th>
                             <th scope="col" class="px-6 py-4 text-right text-xs font-bold text-blue-900 uppercase tracking-wider">Costo Unit. de Compra</th>
-                            <th scope="col" class="px-6 py-4 text-left text-xs font-bold text-blue-900 uppercase tracking-wider">Proveedor</th>
                             <th scope="col" class="px-6 py-4 text-center text-xs font-bold text-blue-900 uppercase tracking-wider">Estado</th>
                             <th scope="col" class="px-6 py-4 text-right text-xs font-bold text-blue-900 uppercase tracking-wider">Acciones</th>
                         </tr>
@@ -201,9 +180,6 @@ new #[Layout('layouts.app')] class extends Component
                             <tr class="hover:bg-slate-50/50 transition-colors">
                                 <td class="px-6 py-4 whitespace-nowrap">
                                     <span class="text-sm font-mono bg-slate-100 text-slate-800 px-2 py-1 rounded font-medium">{{ $lot->batch_number }}</span>
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-left text-sm text-slate-700">
-                                    {{ \Carbon\Carbon::parse($lot->reception_date)->format('d/m/Y') }}
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-left text-sm">
                                     @php
@@ -257,9 +233,6 @@ new #[Layout('layouts.app')] class extends Component
                                 <td class="px-6 py-4 whitespace-nowrap text-right text-sm text-slate-800 font-mono">
                                     ${{ number_format($lot->unit_purchase_price, 2) }}
                                 </td>
-                                <td class="px-6 py-4 text-sm text-slate-700">
-                                    {{ $lot->purchaseOrder->supplier->name ?? 'N/A' }}
-                                </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-center">
                                     @if($lot->status === 'active')
                                         <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-lime-50 text-lime-700 border border-lime-100">
@@ -301,13 +274,13 @@ new #[Layout('layouts.app')] class extends Component
                     </tbody>
                     <tfoot class="bg-slate-50 border-t border-slate-200">
                         <tr>
-                            <td colspan="4" class="px-6 py-4 text-left text-sm font-bold text-blue-900">
+                            <td colspan="3" class="px-6 py-4 text-left text-sm font-bold text-blue-900">
                                 Total de Existencias Físicas
                             </td>
                             <td class="px-6 py-4 text-center text-sm font-extrabold text-blue-900">
                                 {{ $lots->sum('current_quantity') }}
                             </td>
-                            <td colspan="5" class="px-6 py-4"></td>
+                            <td colspan="4" class="px-6 py-4"></td>
                         </tr>
                     </tfoot>
                 </table>

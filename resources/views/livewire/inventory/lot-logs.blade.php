@@ -21,7 +21,7 @@ new #[Layout('layouts.app')] class extends Component
 
     public function mount(Lot $lot): void
     {
-        $this->lot = $lot;
+        $this->lot = $lot->load(['purchaseOrder.supplier', 'medicine']);
     }
 
     /**
@@ -149,6 +149,9 @@ new #[Layout('layouts.app')] class extends Component
                     </div>
                     <div>
                         <strong class="font-semibold text-slate-800">Existencias Físicas Totales:</strong> <span class="font-bold text-blue-900">{{ $lot->current_quantity }}</span>
+                    </div>
+                    <div>
+                        <strong class="font-semibold text-slate-800">Proveedor:</strong> {{ $lot->purchaseOrder->supplier->name ?? 'N/A' }}
                     </div>
                 </div>
             </div>

@@ -193,7 +193,6 @@ test('authorized users can view Level 2 medicine lots page with correct details'
         ->assertSee('Acetaminophen Gripa')
         ->assertSee('LOT-GRIPA-X1')
         ->assertSee('100')
-        ->assertSee('Supplier Test B')
         ->assertSee('Activo');
 });
 
