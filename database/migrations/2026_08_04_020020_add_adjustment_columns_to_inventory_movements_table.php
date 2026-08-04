@@ -12,7 +12,8 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('inventory_movements', function (Blueprint $table) {
-            $table->foreignId('adjusted_movement_id')->nullable()->after('lot_id')->constrained('inventory_movements');
+            $table->string('adjustment_reason', 100)->nullable()->after('concept');
+            $table->text('observations')->nullable()->after('adjustment_reason');
         });
     }
 
@@ -22,8 +23,7 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('inventory_movements', function (Blueprint $table) {
-            $table->dropForeign(['adjusted_movement_id']);
-            $table->dropColumn('adjusted_movement_id');
+            $table->dropColumn(['adjustment_reason', 'observations']);
         });
     }
 };

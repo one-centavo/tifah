@@ -11,7 +11,7 @@ class InventoryMovement extends Model
 
     const UPDATED_AT = null;
 
-    protected $fillable = ['lot_id', 'adjusted_movement_id', 'type', 'quantity', 'previous_balance', 'new_balance', 'concept', 'reference_id', 'created_at', 'created_by'];
+    protected $fillable = ['lot_id', 'type', 'quantity', 'previous_balance', 'new_balance', 'concept', 'adjustment_reason', 'observations', 'reference_id', 'created_at', 'created_by'];
 
     public function lot()
     {
@@ -21,15 +21,5 @@ class InventoryMovement extends Model
     public function creator()
     {
         return $this->belongsTo(User::class, 'created_by');
-    }
-
-    public function adjustedMovement()
-    {
-        return $this->belongsTo(InventoryMovement::class, 'adjusted_movement_id');
-    }
-
-    public function adjustments()
-    {
-        return $this->hasMany(InventoryMovement::class, 'adjusted_movement_id');
     }
 }
