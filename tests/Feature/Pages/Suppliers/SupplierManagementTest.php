@@ -282,3 +282,47 @@ test('it blocks soft delete if supplier has active inventory lots', function () 
         'deleted_at' => null,
     ]);
 });
+
+test('it allows registering a supplier with an NIT of a soft-deleted supplier', function () {
+    $user = User::factory()->create();
+    $archivedSupplier = Supplier::factory()->create(['nit' => '900.123.456']);
+    $archivedSupplier->delete(); // Soft delete
+
+    $this->actingAs($user);
+
+    Volt::test('suppliers.create')
+        ->set('nit', '900.123.456')
+        ->set('name', 'New Supplier Corp')
+        ->set('phone_number', '3001234567')
+        ->set('email', 'new@supplier.com')
+        ->set('address', 'Calle 100')
+        ->call('save')
+        ->assertHasNoErrors();
+
+    $this->assertDatabaseHas('suppliers', [
+        'nit' => '900.123.456',
+        'name' => 'New Supplier Corp',
+        'deleted_at' => null,
+    ]);
+});
+
+test('it allows updating a supplier to have an NIT of a soft-deleted supplier', function () {
+    $user = User::factory()->create();
+    $archivedSupplier = Supplier::factory()->create(['nit' => '900.123.456']);
+    $archivedSupplier->delete(); // Soft delete
+
+    $activeSupplier = Supplier::factory()->create(['nit' => '890.903.938']);
+
+    $this->actingAs($user);
+
+    Volt::test('suppliers.edit', ['supplier' => $activeSupplier])
+        ->set('nit', '900.123.456')
+        ->call('save')
+        ->assertHasNoErrors();
+
+    $this->assertDatabaseHas('suppliers', [
+        'id' => $activeSupplier->id,
+        'nit' => '900.123.456',
+    ]);
+});
+

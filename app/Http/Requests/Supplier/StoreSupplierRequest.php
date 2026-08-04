@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Http\Requests\Supplier;
 
+use Illuminate\Validation\Rule;
+
 class StoreSupplierRequest extends SupplierRequestBase
 {
     /**
@@ -20,7 +22,7 @@ class StoreSupplierRequest extends SupplierRequestBase
                     'required',
                     'string',
                     'max:20',
-                    'unique:suppliers,nit',
+                    Rule::unique('suppliers', 'nit')->whereNull('deleted_at'),
                     'regex:/^\d{1,3}(\.\d{3})*$/',
                 ],
             ]
