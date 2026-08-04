@@ -2,14 +2,13 @@
 
 declare(strict_types=1);
 
+use App\Models\InventoryMovement;
 use App\Models\Lot;
 use App\Models\Medicine;
 use App\Models\PurchaseOrder;
 use App\Models\Supplier;
 use App\Models\User;
-use App\Models\InventoryMovement;
 use App\Services\LotService;
-use Illuminate\Support\Facades\Hash;
 use Livewire\Volt\Volt;
 
 test('guest users are redirected to login page from lot logs', function () {
