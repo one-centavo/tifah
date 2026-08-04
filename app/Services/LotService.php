@@ -101,13 +101,14 @@ class LotService
 
             InventoryMovement::create([
                 'lot_id' => $lot->id,
-                'adjusted_movement_id' => $movement->id,
                 'type' => 'adjustment',
                 'quantity' => $quantityDiff,
                 'previous_balance' => $lot->current_quantity,
                 'new_balance' => $lot->current_quantity + $quantityDiff,
-                'concept' => "Ajuste de cantidad del movimiento #{$movement->id} por: {$reason} - {$observations}",
-                'reference_id' => $movement->reference_id,
+                'concept' => "Ajuste de cantidad del movimiento #{$movement->id}",
+                'adjustment_reason' => $reason,
+                'observations' => $observations,
+                'reference_id' => $movement->id,
                 'created_by' => $userId,
             ]);
 
