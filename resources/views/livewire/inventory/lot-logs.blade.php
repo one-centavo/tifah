@@ -6,7 +6,6 @@ use App\Models\Lot;
 use App\Models\User;
 use App\Models\InventoryMovement;
 use App\Services\LotService;
-use Illuminate\Support\Facades\Hash;
 use Livewire\Attributes\Layout;
 use Livewire\Volt\Component;
 
@@ -19,7 +18,6 @@ new #[Layout('layouts.app')] class extends Component
     public ?int $newQuantity = null;
     public string $reason = '';
     public string $observations = '';
-    public string $adminPassword = '';
 
     public function mount(Lot $lot): void
     {
@@ -31,34 +29,29 @@ new #[Layout('layouts.app')] class extends Component
      */
     public function selectMovementForAdjustment(int $movementId): void
     {
+        // Enforce role check in backend too
+        if (!auth()->user()->isAdmin()) {
+            abort(403, 'Acción no autorizada.');
+        }
+
         $movement = InventoryMovement::findOrFail($movementId);
         
         $this->selectedMovementId = $movement->id;
         $this->newQuantity = $movement->quantity;
         $this->reason = '';
         $this->observations = '';
-        $this->adminPassword = '';
         
         $this->resetErrorBag();
         $this->dispatch('open-modal', 'perform-adjustment');
     }
 
-    /**
-     * Get rules dynamically to conditionally require adminPassword if the user is a warehouse assistant.
-     */
     protected function rules(): array
     {
-        $rules = [
+        return [
             'newQuantity' => ['required', 'integer', 'min:0'],
-            'reason' => ['required', 'string', 'in:Error de digitación,Unidad dañada en recepción,Unidad faltante,Otro'],
+            'reason' => ['required', 'string', 'in:Error de digitación,Unidad dañada,Unidad faltante,Otro'],
             'observations' => ['required', 'string', 'max:500'],
         ];
-
-        if (auth()->user()->isWarehouseAssistant()) {
-            $rules['adminPassword'] = ['required', 'string'];
-        }
-
-        return $rules;
     }
 
     protected function validationAttributes(): array
@@ -67,7 +60,6 @@ new #[Layout('layouts.app')] class extends Component
             'newQuantity' => 'nueva cantidad',
             'reason' => 'motivo del ajuste',
             'observations' => 'observaciones adicionales',
-            'adminPassword' => 'contraseña del administrador',
         ];
     }
 
@@ -76,27 +68,13 @@ new #[Layout('layouts.app')] class extends Component
      */
     public function saveAdjustment(LotService $lotService): void
     {
+        if (!auth()->user()->isAdmin()) {
+            abort(403, 'Acción no autorizada.');
+        }
+
         $this->validate();
 
         $movement = InventoryMovement::findOrFail($this->selectedMovementId);
-
-        // Additional validation if user is Warehouse Assistant
-        if (auth()->user()->isWarehouseAssistant()) {
-            // Find all administrators in the database
-            $admins = User::where('role', 'admin')->get();
-            $authorized = false;
-            foreach ($admins as $admin) {
-                if (Hash::check($this->adminPassword, $admin->password)) {
-                    $authorized = true;
-                    break;
-                }
-            }
-
-            if (!$authorized) {
-                $this->addError('adminPassword', 'La contraseña de administrador ingresada es incorrecta.');
-                return;
-            }
-        }
 
         // Perform the adjustment
         $lotService->adjustMovement(
@@ -110,7 +88,7 @@ new #[Layout('layouts.app')] class extends Component
         $this->dispatch('close-modal', 'perform-adjustment');
         
         // Reset state
-        $this->reset(['selectedMovementId', 'newQuantity', 'reason', 'observations', 'adminPassword']);
+        $this->reset(['selectedMovementId', 'newQuantity', 'reason', 'observations']);
         $this->lot->refresh();
 
         session()->flash('success', 'El ajuste de movimiento ha sido registrado con éxito.');
@@ -118,10 +96,10 @@ new #[Layout('layouts.app')] class extends Component
 
     public function with(): array
     {
-        // Load movements grouped and ordered: adjustments always go below the original movement they correct
+        // Sort grouped: adjustments (linked via reference_id) are grouped directly below their original parent movement
         $movements = $this->lot->inventoryMovements()
             ->with('creator')
-            ->orderByRaw('COALESCE(adjusted_movement_id, id) ASC')
+            ->orderByRaw("CASE WHEN type = 'adjustment' THEN reference_id ELSE id END ASC")
             ->orderBy('id', 'ASC')
             ->get();
 
@@ -200,17 +178,18 @@ new #[Layout('layouts.app')] class extends Component
                             <th scope="col" class="px-6 py-4 text-center text-xs font-bold text-blue-900 uppercase tracking-wider">Movimiento</th>
                             <th scope="col" class="px-6 py-4 text-center text-xs font-bold text-blue-900 uppercase tracking-wider">Saldo Anterior</th>
                             <th scope="col" class="px-6 py-4 text-center text-xs font-bold text-blue-900 uppercase tracking-wider">Nuevo Saldo</th>
-                            <th scope="col" class="px-6 py-4 text-left text-xs font-bold text-blue-900 uppercase tracking-wider">Concepto / Justificación</th>
+                            <th scope="col" class="px-6 py-4 text-left text-xs font-bold text-blue-900 uppercase tracking-wider">Concepto / Motivo</th>
+                            <th scope="col" class="px-6 py-4 text-left text-xs font-bold text-blue-900 uppercase tracking-wider">Observaciones</th>
                             <th scope="col" class="px-6 py-4 text-left text-xs font-bold text-blue-900 uppercase tracking-wider">Usuario Responsable</th>
                             <th scope="col" class="px-6 py-4 text-right text-xs font-bold text-blue-900 uppercase tracking-wider">Acciones</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-slate-100 bg-white">
                         @foreach($movements as $movement)
-                            <tr class="hover:bg-slate-50/50 transition-colors {{ $movement->adjusted_movement_id ? 'bg-slate-50/30' : '' }}">
+                            <tr class="hover:bg-slate-50/50 transition-colors {{ $movement->type === 'adjustment' ? 'bg-slate-50/30' : '' }}">
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-600 font-mono">
                                     <div class="flex items-center gap-1.5">
-                                        @if($movement->adjusted_movement_id)
+                                        @if($movement->type === 'adjustment')
                                             <x-tabler-corner-down-right class="w-4 h-4 text-slate-400 shrink-0" />
                                         @endif
                                         <span>{{ \Carbon\Carbon::parse($movement->created_at)->format('d/m/Y H:i:s') }}</span>
@@ -231,25 +210,41 @@ new #[Layout('layouts.app')] class extends Component
                                 <td class="px-6 py-4 whitespace-nowrap text-center text-sm text-slate-800 font-semibold font-mono">
                                     {{ $movement->new_balance }}
                                 </td>
-                                <td class="px-6 py-4 text-sm text-slate-700 max-w-xs truncate" title="{{ $movement->concept }}">
-                                    @if($movement->adjusted_movement_id)
-                                        <span class="text-xs uppercase font-extrabold text-amber-600 tracking-wider block mb-0.5">Corrección Compensatoria</span>
+                                <td class="px-6 py-4 text-sm text-slate-700">
+                                    @php
+                                        $displayReason = match($movement->type) {
+                                            'entry' => 'Registro Inicial',
+                                            'exit' => 'Salida por Venta',
+                                            'adjustment' => 'Ajuste por Error - ' . ($movement->adjustment_reason ?? 'Otro'),
+                                            default => $movement->concept,
+                                        };
+                                    @endphp
+                                    <span class="font-semibold text-slate-800">{{ $displayReason }}</span>
+                                </td>
+                                <td class="px-6 py-4 text-sm text-slate-600 max-w-xs truncate" title="{{ $movement->observations ?: $movement->concept }}">
+                                    @if($movement->type === 'adjustment')
+                                        <span class="italic text-slate-500">{{ $movement->observations }}</span>
+                                    @else
+                                        <span class="text-slate-400 font-mono text-xs">Ref: #{{ $movement->reference_id }}</span>
                                     @endif
-                                    <span>{{ $movement->concept }}</span>
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-600">
                                     <div class="font-medium text-slate-900">{{ $movement->creator->name ?? 'Sistema' }}</div>
-                                    <div class="text-xs text-slate-400">ID: {{ $movement->created_by ?? 'N/A' }}</div>
+                                    <div class="text-xs text-slate-400 font-mono">ID: {{ $movement->created_by ?? 'N/A' }}</div>
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                    @if($movement->type !== 'adjustment' && is_null($movement->adjusted_movement_id))
-                                        <button type="button" wire:click="selectMovementForAdjustment({{ $movement->id }})"
-                                            class="inline-flex items-center text-blue-900 hover:text-lime-600 transition-colors gap-1 cursor-pointer font-bold">
-                                            <x-tabler-adjustments class="w-4 h-4" />
-                                            <span>Ajustar</span>
-                                        </button>
+                                    @if(auth()->user()->isAdmin())
+                                        @if($movement->type !== 'adjustment')
+                                            <button type="button" wire:click="selectMovementForAdjustment({{ $movement->id }})"
+                                                class="inline-flex items-center text-blue-900 hover:text-lime-600 transition-colors gap-1 cursor-pointer font-bold">
+                                                <x-tabler-adjustments class="w-4 h-4" />
+                                                <span>Ajustar</span>
+                                            </button>
+                                        @else
+                                            <span class="text-xs text-slate-400 italic">No ajustable</span>
+                                        @endif
                                     @else
-                                        <span class="text-xs text-slate-400 italic">No ajustable</span>
+                                        <span class="text-xs text-slate-400 italic">Sólo Admin</span>
                                     @endif
                                 </td>
                             </tr>
@@ -264,7 +259,7 @@ new #[Layout('layouts.app')] class extends Component
     <x-modal name="perform-adjustment" focusable>
         <div class="p-6">
             <h2 class="text-xl font-bold text-blue-900 border-b border-slate-100 pb-3">
-                Ajustar Movimiento #{{ $selectedMovementId }}
+                Registrar Ajuste de Movimiento #{{ $selectedMovementId }}
             </h2>
 
             @if($selectedMovementId)
@@ -275,12 +270,12 @@ new #[Layout('layouts.app')] class extends Component
                 @if($targetMovement)
                     <div class="mt-4 p-4 bg-slate-50 border border-slate-100 rounded-xl space-y-2 text-sm text-slate-700">
                         <div>
-                            <strong class="font-semibold text-slate-800">Fecha del registro:</strong> 
+                            <strong class="font-semibold text-slate-800">Fecha del registro original:</strong> 
                             {{ \Carbon\Carbon::parse($targetMovement->created_at)->format('d/m/Y H:i:s') }}
                         </div>
                         <div>
-                            <strong class="font-semibold text-slate-800">Concepto original:</strong> 
-                            {{ $targetMovement->concept }}
+                            <strong class="font-semibold text-slate-800">Tipo de movimiento:</strong> 
+                            {{ $targetMovement->type === 'entry' ? 'Registro Inicial' : 'Salida por Venta' }}
                         </div>
                         <div>
                             <strong class="font-semibold text-slate-800">Cantidad registrada originalmente:</strong> 
@@ -292,7 +287,7 @@ new #[Layout('layouts.app')] class extends Component
 
             <form wire:submit.prevent="saveAdjustment" class="mt-6 space-y-4">
                 <div>
-                    <x-input-label for="newQuantity" value="Nueva Cantidad Correcta de este Registro" class="font-semibold text-slate-700" />
+                    <x-input-label for="newQuantity" value="Cantidad Corregida (Valor Real)" class="font-semibold text-slate-700" />
                     <x-text-input type="number" id="newQuantity" wire:model="newQuantity" class="mt-1 block w-full rounded-xl" min="0" placeholder="Ingrese la cantidad real corregida" />
                     <x-input-error :messages="$errors->get('newQuantity')" class="mt-2" />
                 </div>
@@ -302,7 +297,7 @@ new #[Layout('layouts.app')] class extends Component
                     <select id="reason" wire:model="reason" class="mt-1 block w-full rounded-xl border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-slate-800 text-sm py-2 px-3">
                         <option value="">Seleccione un motivo...</option>
                         <option value="Error de digitación">Error de digitación</option>
-                        <option value="Unidad dañada en recepción">Unidad dañada en recepción</option>
+                        <option value="Unidad dañada">Unidad dañada</option>
                         <option value="Unidad faltante">Unidad faltante</option>
                         <option value="Otro">Otro</option>
                     </select>
@@ -310,26 +305,10 @@ new #[Layout('layouts.app')] class extends Component
                 </div>
 
                 <div>
-                    <x-input-label for="observations" value="Observaciones Adicionales (Justificación)" class="font-semibold text-slate-700" />
-                    <textarea id="observations" wire:model="observations" rows="3" class="mt-1 block w-full rounded-xl border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-slate-800 text-sm" placeholder="Describa brevemente el error o causa del ajuste..."></textarea>
+                    <x-input-label for="observations" value="Observaciones Adicionales (Breve Descripción)" class="font-semibold text-slate-700" />
+                    <textarea id="observations" wire:model="observations" rows="3" class="mt-1 block w-full rounded-xl border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-slate-800 text-sm" placeholder="Describa qué causó el error y justifique la corrección..."></textarea>
                     <x-input-error :messages="$errors->get('observations')" class="mt-2" />
                 </div>
-
-                <!-- Admin Password validation for Warehouse Assistants -->
-                @if(auth()->user() && auth()->user()->isWarehouseAssistant())
-                    <div class="p-4 bg-amber-50 border border-amber-200 rounded-xl mt-4">
-                        <div class="flex gap-2 text-amber-800 font-bold text-sm mb-2 items-center">
-                            <x-tabler-shield-lock class="w-5 h-5 shrink-0" />
-                            <span>Autorización Requerida (Rol Auxiliar)</span>
-                        </div>
-                        <p class="text-xs text-amber-700 mb-3">
-                            Como Auxiliar de Bodega, requiere que un Administrador autorice esta acción ingresando su contraseña.
-                        </p>
-                        <x-input-label for="adminPassword" value="Contraseña del Administrador" class="font-semibold text-slate-700" />
-                        <x-text-input type="password" id="adminPassword" wire:model="adminPassword" class="mt-1 block w-full rounded-xl bg-white" placeholder="Contraseña de un Administrador" />
-                        <x-input-error :messages="$errors->get('adminPassword')" class="mt-2" />
-                    </div>
-                @endif
 
                 <div class="mt-6 flex justify-end gap-3 border-t border-slate-100 pt-4">
                     <x-secondary-button x-on:click="$dispatch('close')" class="cursor-pointer">

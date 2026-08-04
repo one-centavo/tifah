@@ -154,11 +154,11 @@ test('it displays existing movement history log with exact details', function ()
 
     Volt::test('inventory.lot-logs', ['lot' => $lot])
         ->assertSee('21')
-        ->assertSee('Merchandise reception - Batch BATCH123')
+        ->assertSee('Registro Inicial')
         ->assertSee('Jacinto Perez');
 });
 
-test('administrator can adjust a movement without password validation', function () {
+test('administrator can adjust a movement', function () {
     $admin = User::factory()->admin()->create();
     $this->actingAs($admin);
 
@@ -220,17 +220,19 @@ test('administrator can adjust a movement without password validation', function
     $lot->refresh();
     expect($lot->current_quantity)->toBe(20);
 
-    $adjustMovement = InventoryMovement::where('adjusted_movement_id', $movement->id)->first();
+    $adjustMovement = InventoryMovement::where('reference_id', $movement->id)
+        ->where('type', 'adjustment')
+        ->first();
     expect($adjustMovement)->not->toBeNull()
         ->and($adjustMovement->quantity)->toBe(-1)
         ->and($adjustMovement->previous_balance)->toBe(21)
         ->and($adjustMovement->new_balance)->toBe(20)
-        ->and($adjustMovement->concept)->toContain('Ajuste de cantidad del movimiento')
-        ->and($adjustMovement->concept)->toContain('Typo, should be 20 instead of 21');
+        ->and($adjustMovement->adjustment_reason)->toBe('Error de digitación')
+        ->and($adjustMovement->observations)->toBe('Typo, should be 20 instead of 21');
 });
 
-test('warehouse assistant needs a valid administrator password to authorize adjustment', function () {
-    $admin = User::factory()->admin()->create(['password' => Hash::make('secretadmin')]);
+test('warehouse assistant cannot adjust a movement', function () {
+    $admin = User::factory()->admin()->create();
     $assistant = User::factory()->create(); // role is warehouse_assistant by default
     $this->actingAs($assistant);
 
@@ -280,31 +282,15 @@ test('warehouse assistant needs a valid administrator password to authorize adju
         'created_by' => $admin->id,
     ]);
 
-    // Test adjustment fails with incorrect password
+    // UI should show "Sólo Admin" and hide adjust button triggers
+    Volt::test('inventory.lot-logs', ['lot' => $lot])
+        ->assertSee('Sólo Admin')
+        ->assertDontSee('Ajustar');
+
+    // Trying to trigger adjustment actions directly should abort with a 403
     Volt::test('inventory.lot-logs', ['lot' => $lot])
         ->call('selectMovementForAdjustment', $movement->id)
-        ->set('newQuantity', 20)
-        ->set('reason', 'Error de digitación')
-        ->set('observations', 'Typo in digitizing')
-        ->set('adminPassword', 'wrongpassword')
-        ->call('saveAdjustment')
-        ->assertHasErrors(['adminPassword']);
-
-    $lot->refresh();
-    expect($lot->current_quantity)->toBe(21);
-
-    // Test adjustment succeeds with correct password
-    Volt::test('inventory.lot-logs', ['lot' => $lot])
-        ->call('selectMovementForAdjustment', $movement->id)
-        ->set('newQuantity', 20)
-        ->set('reason', 'Error de digitación')
-        ->set('observations', 'Typo in digitizing')
-        ->set('adminPassword', 'secretadmin')
-        ->call('saveAdjustment')
-        ->assertHasNoErrors();
-
-    $lot->refresh();
-    expect($lot->current_quantity)->toBe(20);
+        ->assertForbidden();
 });
 
 test('movements log lists adjustments immediately underneath the original movement', function () {
@@ -370,19 +356,20 @@ test('movements log lists adjustments immediately underneath the original moveme
         'created_by' => $admin->id,
     ]);
 
-    // Perform adjustment on movement A (should have ID 3 equivalent, but point to parent ID 1)
+    // Perform adjustment on movement A (pointing to parent ID 1)
     $lotService = app(LotService::class);
     $lotService->adjustMovement($movementA, 19, 'Error de digitación', 'Correction A', $admin->id);
 
     // Retrieve sorted movements from database with the same query as the component
     $movementsList = $lot->inventoryMovements()
-        ->orderByRaw('COALESCE(adjusted_movement_id, id) ASC')
+        ->orderByRaw("CASE WHEN type = 'adjustment' THEN reference_id ELSE id END ASC")
         ->orderBy('id', 'ASC')
         ->get();
 
     // Expected order: Movement A (ID 1), Adjustment of A (ID 3), Movement B (ID 2)
     expect($movementsList[0]->id)->toBe($movementA->id);
-    expect($movementsList[1]->adjusted_movement_id)->toBe($movementA->id);
+    expect($movementsList[1]->reference_id)->toBe($movementA->id);
+    expect($movementsList[1]->type)->toBe('adjustment');
     expect($movementsList[2]->id)->toBe($movementB->id);
 
     // Verify component renders all of them
