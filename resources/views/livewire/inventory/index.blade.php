@@ -304,7 +304,10 @@ new #[Layout('layouts.app')] class extends Component
     public function saveQuickSupplier(SupplierService $supplierService): void
     {
         $this->validate([
-            'supplier_nit' => ['required', 'unique:suppliers,nit'],
+            'supplier_nit' => [
+                'required',
+                \Illuminate\Validation\Rule::unique('suppliers', 'nit')->whereNull('deleted_at'),
+            ],
             'supplier_dv' => ['required', 'integer', 'min:0', 'max:9'],
             'supplier_name' => ['required', 'string', 'max:150'],
             'supplier_contact_person' => ['required', 'string', 'max:100'],
