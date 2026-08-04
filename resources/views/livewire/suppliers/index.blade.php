@@ -80,7 +80,7 @@ new #[Layout('layouts.app')] class extends Component
             $this->dispatch('close-modal', 'confirm-supplier-deletion');
             $this->reset(['supplierIdBeingDeleted', 'supplierNameBeingDeleted']);
 
-            session()->flash('success', 'El proveedor ha sido eliminado con éxito.');
+            session()->flash('success', 'El proveedor ha sido archivado con éxito.');
         } catch (ValidationException $e) {
             foreach ($e->errors() as $key => $messages) {
                 foreach ($messages as $message) {
@@ -266,7 +266,8 @@ new #[Layout('layouts.app')] class extends Component
                                 </button>
                             </th>
                             <th scope="col" class="px-6 py-4 text-left text-xs font-bold text-blue-900 uppercase tracking-wider">Contacto</th>
-                            <th scope="col" class="px-6 py-4 text-left text-xs font-bold text-blue-900 uppercase tracking-wider">Teléfono / Email</th>
+                            <th scope="col" class="px-6 py-4 text-left text-xs font-bold text-blue-900 uppercase tracking-wider">Teléfono</th>
+                            <th scope="col" class="px-6 py-4 text-left text-xs font-bold text-blue-900 uppercase tracking-wider">Correo Electrónico</th>
                             <th scope="col" class="px-6 py-4 text-left text-xs font-bold text-blue-900 uppercase tracking-wider">Dirección</th>
                             <th scope="col" class="px-6 py-4 text-center text-xs font-bold text-blue-900 uppercase tracking-wider">Estado</th>
                             <th scope="col" class="px-6 py-4 text-right text-xs font-bold text-blue-900 uppercase tracking-wider">Acciones</th>
@@ -284,9 +285,11 @@ new #[Layout('layouts.app')] class extends Component
                                 <td class="px-6 py-4 text-sm text-slate-600 max-w-xs truncate">
                                     {{ $supplier->contact_person ?: 'Sin contacto' }}
                                 </td>
-                                <td class="px-6 py-4 text-sm text-slate-600">
-                                    <div class="font-medium text-slate-700">{{ $supplier->phone_number }}</div>
-                                    <div class="text-xs text-slate-400">{{ $supplier->email }}</div>
+                                <td class="px-6 py-4 text-sm text-slate-600 whitespace-nowrap">
+                                    {{ $supplier->phone_number }}
+                                </td>
+                                <td class="px-6 py-4 text-sm text-slate-600 max-w-xs truncate">
+                                    {{ $supplier->email }}
                                 </td>
                                 <td class="px-6 py-4 text-sm text-slate-600 max-w-xs truncate">
                                     {{ $supplier->address }}
@@ -316,9 +319,9 @@ new #[Layout('layouts.app')] class extends Component
                                             wire:click="confirmSupplierDeletion({{ $supplier->id }})"
                                             class="inline-flex items-center text-red-600 hover:text-red-900 transition-colors gap-1 cursor-pointer">
                                             <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                                <path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0"></path>
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M20.25 7.5l-.625 10.632a2.25 2.25 0 01-2.247 2.118H6.622a2.25 2.25 0 01-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125z"></path>
                                             </svg>
-                                            <span>Eliminar</span>
+                                            <span>Archivar</span>
                                         </button>
                                     @else
                                         <span class="text-xs text-slate-400">Sin acciones</span>
@@ -341,7 +344,7 @@ new #[Layout('layouts.app')] class extends Component
     <x-modal name="confirm-supplier-deletion" focusable>
         <div class="p-6">
             <h2 class="text-lg font-bold text-blue-900">
-                ¿Está seguro de que desea eliminar el proveedor?
+                ¿Está seguro de que desea archivar el proveedor?
             </h2>
 
             <p class="mt-2 text-sm text-slate-600 font-normal">
@@ -356,7 +359,7 @@ new #[Layout('layouts.app')] class extends Component
                 </x-secondary-button>
 
                 <x-danger-button wire:click="deleteSupplier" class="cursor-pointer">
-                    Eliminar
+                    Archivar
                 </x-danger-button>
             </div>
         </div>
