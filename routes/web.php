@@ -26,6 +26,10 @@ Route::middleware(['auth'])->group(function () {
     Volt::route('sanitary-registries/create', 'sanitary-registries.create')->name('sanitary-registries.create');
     Volt::route('sanitary-registries/{sanitary_registry}/edit', 'sanitary-registries.edit')->name('sanitary-registries.edit');
 
+    Volt::route('suppliers', 'suppliers.index')->name('suppliers.index');
+    Volt::route('suppliers/create', 'suppliers.create')->name('suppliers.create');
+    Volt::route('suppliers/{supplier}/edit', 'suppliers.edit')->name('suppliers.edit');
+
     Volt::route('medicines', 'medicines.index')->name('medicines.index');
     Volt::route('medicines/create', 'medicines.create')->name('medicines.create');
     Volt::route('medicines/{medicine}/edit', 'medicines.edit')->name('medicines.edit');
