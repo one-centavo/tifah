@@ -91,26 +91,28 @@ class LotService
     }
 
     /**
-     * Adjust the current quantity of a lot and record the compensating movement.
+     * Adjust the quantity of a specific movement and record the compensating movement.
      */
-    public function adjust(Lot $lot, int $newQuantity, string $reason, string $observations, int $userId): void
+    public function adjustMovement(InventoryMovement $movement, int $newQuantity, string $reason, string $observations, int $userId): void
     {
-        DB::transaction(function () use ($lot, $newQuantity, $reason, $observations, $userId) {
-            $quantityDiff = $newQuantity - $lot->current_quantity;
+        DB::transaction(function () use ($movement, $newQuantity, $reason, $observations, $userId) {
+            $lot = $movement->lot;
+            $quantityDiff = $newQuantity - $movement->quantity;
 
             InventoryMovement::create([
                 'lot_id' => $lot->id,
+                'adjusted_movement_id' => $movement->id,
                 'type' => 'adjustment',
                 'quantity' => $quantityDiff,
                 'previous_balance' => $lot->current_quantity,
-                'new_balance' => $newQuantity,
-                'concept' => 'Ajuste por: ' . $reason . ' - ' . $observations,
-                'reference_id' => $lot->purchase_order_id,
+                'new_balance' => $lot->current_quantity + $quantityDiff,
+                'concept' => "Ajuste de cantidad del movimiento #{$movement->id} por: {$reason} - {$observations}",
+                'reference_id' => $movement->reference_id,
                 'created_by' => $userId,
             ]);
 
             $lot->update([
-                'current_quantity' => $newQuantity,
+                'current_quantity' => $lot->current_quantity + $quantityDiff,
                 'updated_by' => $userId,
             ]);
         });
