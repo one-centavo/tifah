@@ -16,6 +16,7 @@ _Features completadas, en orden de implementación._
 8. **021 · Medicine Lots Level 2 (HU 28)** — Permite visualizar el listado detallado de todos los lotes activos de un medicamento específico, con alertas de vencimiento, ordenamiento y navegación al historial de logs.
 9. **023 · Provider Registration (HU 16)** — Permite el registro y administración de distribuidores mayoristas y laboratorios, aplicando el cálculo automático del DV de la DIAN y restricciones de borrado suave.
 10. **024 · Show and Filter Providers (HU 17)** — Permite visualizar, buscar, ordenar y filtrar los proveedores registrados por su estado (activo/archivado), incluyendo las acciones de edición y archivado bajo validación.
+11. **025 · Edit Provider (HU 18)** — Permite la edición de la información de proveedores previamente registrados, aplicando validación de unicidad de NIT en registros activos, recálculo automático del DV de la DIAN y trazabilidad de las modificaciones.
 
 ## Siguiente 🔜
 
