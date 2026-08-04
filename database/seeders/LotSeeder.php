@@ -28,9 +28,20 @@ class LotSeeder extends Seeder
             $count = rand(1, 3);
             for ($i = 0; $i < $count; $i++) {
                 $purchaseOrder = $purchaseOrders->random();
-                Lot::factory()->create([
+                $lot = Lot::factory()->create([
                     'medicine_id' => $medicine->id,
                     'purchase_order_id' => $purchaseOrder->id,
+                    'created_by' => $user->id,
+                ]);
+
+                \App\Models\InventoryMovement::create([
+                    'lot_id' => $lot->id,
+                    'type' => 'entry',
+                    'quantity' => $lot->initial_quantity,
+                    'previous_balance' => 0,
+                    'new_balance' => $lot->initial_quantity,
+                    'concept' => 'Merchandise reception - Batch '.$lot->batch_number,
+                    'reference_id' => $purchaseOrder->id,
                     'created_by' => $user->id,
                 ]);
             }

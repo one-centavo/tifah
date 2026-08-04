@@ -13,6 +13,7 @@ _Features completadas, en orden de implementación._
 5. **005 · Create Laboratory & Laboratory Management** — Permite registrar y administrar el catálogo de laboratorios fabricantes de medicamentos, aplicando borrado lógico y previniendo la eliminación si existen productos asociados.
 6. **006 · Edit Laboratory** — Permite la edición de la información de laboratorios previamente registrados, garantizando la validación de unicidad en registros activos y la trazabilidad de las modificaciones.
 7. **007 · Show and Filter Laboratories** — Permite visualizar, buscar, ordenar y filtrar los laboratorios registrados por su estado (activo/archivado), incluyendo las acciones de edición y eliminación suave.
+8. **021 · Medicine Lots Level 2 (HU 28)** — Permite visualizar el listado detallado de todos los lotes activos de un medicamento específico, con alertas de vencimiento, ordenamiento y navegación al historial de logs.
 
 ## Siguiente 🔜
 
