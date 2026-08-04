@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Models\InventoryMovement;
 use App\Models\Lot;
 use App\Models\Medicine;
 use App\Models\PurchaseOrder;
@@ -34,7 +35,7 @@ class LotSeeder extends Seeder
                     'created_by' => $user->id,
                 ]);
 
-                \App\Models\InventoryMovement::create([
+                InventoryMovement::create([
                     'lot_id' => $lot->id,
                     'type' => 'entry',
                     'quantity' => $lot->initial_quantity,

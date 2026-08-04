@@ -325,4 +325,3 @@ test('it allows updating a supplier to have an NIT of a soft-deleted supplier', 
         'nit' => '900.123.456',
     ]);
 });
-

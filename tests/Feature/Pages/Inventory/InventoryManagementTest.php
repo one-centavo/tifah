@@ -648,4 +648,3 @@ test('it calculates days remaining and renders correct expiration alerts and sto
         ->assertSee('Total de Existencias Físicas')
         ->assertSee('75'); // 5 + 10 + 15 + 20 + 25 = 75
 });
-
