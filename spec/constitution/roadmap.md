@@ -15,6 +15,7 @@ _Features completadas, en orden de implementación._
 7. **007 · Show and Filter Laboratories** — Permite visualizar, buscar, ordenar y filtrar los laboratorios registrados por su estado (activo/archivado), incluyendo las acciones de edición y eliminación suave.
 8. **021 · Medicine Lots Level 2 (HU 28)** — Permite visualizar el listado detallado de todos los lotes activos de un medicamento específico, con alertas de vencimiento, ordenamiento y navegación al historial de logs.
 9. **023 · Provider Registration (HU 16)** — Permite el registro y administración de distribuidores mayoristas y laboratorios, aplicando el cálculo automático del DV de la DIAN y restricciones de borrado suave.
+10. **024 · Show and Filter Providers (HU 17)** — Permite visualizar, buscar, ordenar y filtrar los proveedores registrados por su estado (activo/archivado), incluyendo las acciones de edición y archivado bajo validación.
 
 ## Siguiente 🔜
 
