@@ -25,6 +25,7 @@ _Lo próximo a abordar. Idealmente una sola feature "en curso" a la vez._
 
 _Sin comprometer ni ordenar del todo. Ideas que respetan la constitución._
 
-- **<Nombre>** — <qué aportaría>.
+- **023 · Provider Registration (HU 16)** — Permite el registro y administración de distribuidores mayoristas y laboratorios, aplicando el cálculo automático del DV de la DIAN y restricciones de borrado suave.
+
 
 > Cada feature nueva se crea como `features/NNN-nombre-feature/` con `spec.md`, `plan.md` y `tasks.md` antes de tocar código.
