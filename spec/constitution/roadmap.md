@@ -17,6 +17,7 @@ _Features completadas, en orden de implementación._
 9. **023 · Provider Registration (HU 16)** — Permite el registro y administración de distribuidores mayoristas y laboratorios, aplicando el cálculo automático del DV de la DIAN y restricciones de borrado suave.
 10. **024 · Show and Filter Providers (HU 17)** — Permite visualizar, buscar, ordenar y filtrar los proveedores registrados por su estado (activo/archivado), incluyendo las acciones de edición y archivado bajo validación.
 11. **025 · Edit Provider (HU 18)** — Permite la edición de la información de proveedores previamente registrados, aplicando validación de unicidad de NIT en registros activos, recálculo automático del DV de la DIAN y trazabilidad de las modificaciones.
+12. **026 · Delete Provider (HU 19)** — Permite archivar un proveedor mediante borrado suave, deshabilitándolo de las operaciones activas tras validar que no existan lotes de mercancía activos asociados, y registrando la auditoría de eliminación.
 
 ## Siguiente 🔜
 
