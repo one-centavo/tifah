@@ -34,10 +34,6 @@ COPY package.json pnpm-lock.yaml* vite.config.js ./
 # igual que en Dockerfile.dev, evitando mismatches de lockfileVersion
 RUN corepack enable
 
-# pnpm v10 bloquea por defecto los postinstall scripts de dependencias (ej. esbuild).
-# Lo aprobamos explícitamente para builds no interactivos (CI/Docker).
-RUN echo "only-built-dependencies[]=esbuild" >> .npmrc
-
 RUN pnpm config set package-import-method copy \
     && pnpm install --frozen-lockfile
 

@@ -15,5 +15,10 @@
     "dependencies": {
         "dotenv": "^17.4.2",
         "flowbite": "^4.0.2"
+    },
+    "pnpm": {
+        "onlyBuiltDependencies": [
+            "esbuild"
+        ]
     }
 }
