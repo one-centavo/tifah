@@ -8,8 +8,8 @@ test('login screen can be rendered', function () {
 
     $response
         ->assertOk()
-        ->assertSee('Email')
-        ->assertSee('Password');
+        ->assertSee('Correo electrónico')
+        ->assertSee('Contraseña');
 });
 
 test('users can authenticate using the login screen', function () {

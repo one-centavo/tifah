@@ -15,12 +15,18 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
+        if (app()->environment('production')) {
+            $this->command->warn('Skipping development seeders in production environment.');
+            return;
+        }
+
         // User::factory(10)->create();
 
         User::factory()->create([
             'first_name' => 'Test',
             'last_name' => 'User',
             'email' => 'test@example.com',
+            'role' => 'admin',
         ]);
 
         $this->call([
@@ -33,6 +39,9 @@ class DatabaseSeeder extends Seeder
             ContentUnitSeeder::class,
             MedicineSeeder::class,
             MedicineBarcodeSeeder::class,
+            PurchaseOrderSeeder::class,
+            LotSeeder::class,
+            CustomerSeeder::class,
         ]);
     }
 }

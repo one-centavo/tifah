@@ -1,17 +1,23 @@
 services:
-    # Web Server (Nginx)
+    # Web Server
     web:
         container_name: tifah-nginx
         image: nginx:alpine
-        ports:
-            - "${FORWARD_NGINX_PORT:-8080}:80"
+        deploy:
+            resources:
+                limits:
+                    memory: 128M
+                reservations:
+                    memory: 64M
         volumes:
-            - .:/var/www/html
             - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf
+            - tifah_public_assets:/var/www/html/public
         depends_on:
             - app
         networks:
             - tifah-network
+            - proxy-network
+        restart: always
 
     # Laravel Application
     app:
@@ -22,36 +28,36 @@ services:
             args:
                 user: laravel_user
                 uid: ${UID:-1000}
+        deploy:
+            resources:
+                limits:
+                    memory: 1G
+                reservations:
+                    memory: 512M
         volumes:
-            - .:/var/www/html
-            - ./docker/php/msmtprc:/etc/msmtprc:ro
-        ports:
-            - "${VITE_PORT:-5173}:5173"
+            - tifah_public_assets:/var/www/html/public
+            - ./.env:/var/www/html/.env
         networks:
             - tifah-network
-
-    # Mailpit for sending test emails
-    mailpit:
-        container_name: tifah-mailpit
-        image: axllent/mailpit
-        ports:
-            - "1025:1025"
-            - "8025:8025"
-        networks:
-            - tifah-network
+            - proxy-network
+        restart: always
 
     # Database
     db:
         container_name: tifah-mysql
         image: mysql:8.0
+        deploy:
+            resources:
+                limits:
+                    memory: 1G
+                reservations:
+                    memory: 512M
         restart: always
         environment:
             MYSQL_DATABASE: ${DB_DATABASE}
             MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
             MYSQL_USER: ${DB_USERNAME}
             MYSQL_PASSWORD: ${DB_PASSWORD}
-        ports:
-            - "${FORWARD_DB_PORT:-3306}:3306"
         volumes:
             - tifah_db_data:/var/lib/mysql
         networks:
@@ -60,6 +66,9 @@ services:
 networks:
     tifah-network:
         driver: bridge
+    proxy-network:
+        external: true
 
 volumes:
     tifah_db_data:
+    tifah_public_assets:

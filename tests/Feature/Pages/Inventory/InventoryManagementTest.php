@@ -28,7 +28,7 @@ test('authorized users can access inventory management page', function () {
         ->assertSee('Gestión de Inventario');
 });
 
-test('it displays the list of active lots', function () {
+test('it displays consolidated medicines list with total stock and active lots count', function () {
     $user = User::factory()->create();
     $this->actingAs($user);
 
@@ -54,6 +54,7 @@ test('it displays the list of active lots', function () {
 
     $medicine = Medicine::factory()->create(['name' => 'Lantus Insulin']);
 
+    // Active Lot
     Lot::create([
         'medicine_id' => $medicine->id,
         'purchase_order_id' => $purchaseOrder->id,
@@ -67,23 +68,95 @@ test('it displays the list of active lots', function () {
         'created_by' => $user->id,
     ]);
 
+    // Blocked Lot (should NOT count towards active lots or active stock sum)
+    Lot::create([
+        'medicine_id' => $medicine->id,
+        'purchase_order_id' => $purchaseOrder->id,
+        'batch_number' => 'BATCHBLOCKED',
+        'expiration_date' => now()->addYear()->toDateString(),
+        'current_quantity' => 20,
+        'initial_quantity' => 20,
+        'reception_date' => now()->toDateString(),
+        'unit_purchase_price' => 10.00,
+        'status' => 'blocked',
+        'created_by' => $user->id,
+    ]);
+
     Volt::test('inventory.index')
         ->assertSee('Lantus Insulin')
-        ->assertSee('BATCHX100');
+        ->assertSee('50') // Active stock is 50
+        ->assertSee('1')  // Active lots count is 1
+        ->assertSeeHtml(route('inventory.medicine-lots', $medicine->id));
 });
 
-test('it can search lots by medicine name or batch number', function () {
+test('it can search medicines by name or barcode on consolidated index', function () {
+    $user = User::factory()->create();
+    $this->actingAs($user);
+
+    $medicineA = Medicine::factory()->create(['name' => 'Medicine A']);
+    MedicineBarcode::create([
+        'medicine_id' => $medicineA->id,
+        'barcode' => '7701111111111',
+        'is_main' => true,
+        'created_by' => $user->id,
+    ]);
+
+    $medicineB = Medicine::factory()->create(['name' => 'Medicine B']);
+    MedicineBarcode::create([
+        'medicine_id' => $medicineB->id,
+        'barcode' => '7702222222222',
+        'is_main' => true,
+        'created_by' => $user->id,
+    ]);
+
+    // Search by commercial name
+    Volt::test('inventory.index')
+        ->set('search', 'Medicine A')
+        ->assertSee('Medicine A')
+        ->assertDontSee('Medicine B');
+
+    // Search by barcode
+    Volt::test('inventory.index')
+        ->set('search', '7702222222222')
+        ->assertSee('Medicine B')
+        ->assertDontSee('Medicine A');
+});
+
+test('it does not show sales price on inventory index page', function () {
+    $user = User::factory()->create();
+    $this->actingAs($user);
+
+    $medicine = Medicine::factory()->create([
+        'name' => 'SecretPriceMedA',
+        'selling_price' => 77777.00,
+    ]);
+
+    $response = $this->get(route('inventory.index'));
+
+    $response->assertOk();
+    $response->assertDontSee('77,777');
+    $response->assertDontSee('77777');
+});
+
+test('guest users are redirected from Level 2 lots page', function () {
+    $medicine = Medicine::factory()->create();
+    $response = $this->get(route('inventory.medicine-lots', $medicine->id));
+
+    $response->assertRedirect('/login');
+});
+
+test('authorized users can view Level 2 medicine lots page with correct details', function () {
     $user = User::factory()->create();
     $this->actingAs($user);
 
     $supplier = Supplier::create([
-        'nit' => '12345678-8',
-        'dv' => 8,
-        'name' => 'Supplier Test A',
-        'contact_person' => 'John Doe',
-        'phone_number' => '1234567',
-        'email' => 'supplier@test.com',
-        'address' => 'Supplier Address',
+        'nit' => '88888888-2',
+        'dv' => 2,
+        'name' => 'Supplier Test B',
+        'contact_person' => 'Jane Smith',
+        'phone_number' => '9876543',
+        'email' => 'jane@supplierb.com',
+        'address' => 'Supplier B Road',
         'created_by' => $user->id,
     ]);
 
@@ -92,53 +165,54 @@ test('it can search lots by medicine name or batch number', function () {
         'status' => 'received',
         'expected_date' => now()->toDateString(),
         'received_at' => now()->toDateString(),
-        'total_estimated' => 100.00,
+        'total_estimated' => 150.00,
         'created_by' => $user->id,
     ]);
 
-    $medicineA = Medicine::factory()->create(['name' => 'Medicine A']);
-    $medicineB = Medicine::factory()->create(['name' => 'Medicine B']);
+    $medicine = Medicine::factory()->create([
+        'name' => 'Dolex Gripa',
+        'generic_name' => 'Acetaminophen Gripa',
+        'selling_price' => 450.00,
+    ]);
 
     Lot::create([
-        'medicine_id' => $medicineA->id,
+        'medicine_id' => $medicine->id,
         'purchase_order_id' => $purchaseOrder->id,
-        'batch_number' => 'BATCHA',
+        'batch_number' => 'LOT-GRIPA-X1',
         'expiration_date' => now()->addYear()->toDateString(),
-        'current_quantity' => 10,
-        'initial_quantity' => 10,
+        'current_quantity' => 100,
+        'initial_quantity' => 100,
         'reception_date' => now()->toDateString(),
-        'unit_purchase_price' => 5.00,
+        'unit_purchase_price' => 150.00,
         'status' => 'active',
         'created_by' => $user->id,
     ]);
 
-    Lot::create([
-        'medicine_id' => $medicineB->id,
-        'purchase_order_id' => $purchaseOrder->id,
-        'batch_number' => 'BATCHB',
-        'expiration_date' => now()->addYear()->toDateString(),
-        'current_quantity' => 15,
-        'initial_quantity' => 15,
-        'reception_date' => now()->toDateString(),
-        'unit_purchase_price' => 5.00,
-        'status' => 'active',
-        'created_by' => $user->id,
-    ]);
-
-    // Search by medicine name
-    Volt::test('inventory.index')
-        ->set('search', 'Medicine A')
-        ->assertSee('BATCHA')
-        ->assertDontSee('BATCHB');
-
-    // Search by batch number
-    Volt::test('inventory.index')
-        ->set('search', 'BATCHB')
-        ->assertSee('BATCHB')
-        ->assertDontSee('BATCHA');
+    Volt::test('inventory.medicine-lots', ['medicine' => $medicine])
+        ->assertSee('Dolex Gripa')
+        ->assertSee('Acetaminophen Gripa')
+        ->assertSee('LOT-GRIPA-X1')
+        ->assertSee('100')
+        ->assertSee('Activo');
 });
 
-test('it can soft delete a lot and log audit trail', function () {
+test('it does not show selling price on Level 2 medicine lots page', function () {
+    $user = User::factory()->create();
+    $this->actingAs($user);
+
+    $medicine = Medicine::factory()->create([
+        'name' => 'SecretPriceMedicine',
+        'selling_price' => 88888.00,
+    ]);
+
+    $response = $this->get(route('inventory.medicine-lots', $medicine->id));
+
+    $response->assertOk();
+    $response->assertDontSee('88,888');
+    $response->assertDontSee('88888');
+});
+
+test('it can soft delete a lot and log audit trail from Level 2 lots page', function () {
     $user = User::factory()->create();
     $this->actingAs($user);
 
@@ -177,7 +251,7 @@ test('it can soft delete a lot and log audit trail', function () {
         'created_by' => $user->id,
     ]);
 
-    Volt::test('inventory.index')
+    Volt::test('inventory.medicine-lots', ['medicine' => $medicine])
         ->call('confirmLotDeletion', $lot->id)
         ->assertSet('lotIdBeingDeleted', $lot->id)
         ->call('deleteLot');
@@ -204,7 +278,7 @@ test('tab switching preserves reception state', function () {
     Volt::test('inventory.index')
         ->set('activeTab', 'reception')
         ->set('barcode', '12345')
-        ->set('activeTab', 'lots')
+        ->set('activeTab', 'consolidated')
         ->assertSet('barcode', '12345');
 });
 
@@ -360,7 +434,7 @@ test('confirming reception creates database entries and updates total stock', fu
         ->call('addToTemporaryList')
 
         ->call('confirmReception')
-        ->assertSet('activeTab', 'lots')
+        ->assertSet('activeTab', 'consolidated')
         ->assertCount('temporaryLots', 0);
 
     // Verify Purchase Order
@@ -388,4 +462,189 @@ test('confirming reception creates database entries and updates total stock', fu
     // Verify dynamic stock calculation matches sum of both batches
     $medicine->refresh();
     expect($medicine->total_stock)->toBe(50);
+});
+
+test('it supports sorting lots by expiration date and entry date', function () {
+    $user = User::factory()->create();
+    $this->actingAs($user);
+
+    $medicine = Medicine::factory()->create();
+    $supplier = Supplier::create([
+        'nit' => '12345678-8',
+        'dv' => 8,
+        'name' => 'Supplier Sort',
+        'contact_person' => 'Jane',
+        'phone_number' => '123',
+        'email' => 'sort@test.com',
+        'address' => 'Addr',
+        'created_by' => $user->id,
+    ]);
+    $purchaseOrder = PurchaseOrder::create([
+        'supplier_id' => $supplier->id,
+        'status' => 'received',
+        'expected_date' => now()->toDateString(),
+        'received_at' => now()->toDateString(),
+        'total_estimated' => 100.00,
+        'created_by' => $user->id,
+    ]);
+
+    // Expiry in 60 days, reception date today
+    $lotA = Lot::create([
+        'medicine_id' => $medicine->id,
+        'purchase_order_id' => $purchaseOrder->id,
+        'batch_number' => 'LOT-A',
+        'expiration_date' => now()->addDays(60)->toDateString(),
+        'current_quantity' => 10,
+        'initial_quantity' => 10,
+        'reception_date' => now()->toDateString(),
+        'unit_purchase_price' => 1.00,
+        'status' => 'active',
+        'created_by' => $user->id,
+    ]);
+
+    // Expiry in 30 days, reception date yesterday
+    $lotB = Lot::create([
+        'medicine_id' => $medicine->id,
+        'purchase_order_id' => $purchaseOrder->id,
+        'batch_number' => 'LOT-B',
+        'expiration_date' => now()->addDays(30)->toDateString(),
+        'current_quantity' => 20,
+        'initial_quantity' => 20,
+        'reception_date' => now()->subDay()->toDateString(),
+        'unit_purchase_price' => 1.00,
+        'status' => 'active',
+        'created_by' => $user->id,
+    ]);
+
+    // Test default sorting: expiration_date ASC -> LOT-B (30 days) then LOT-A (60 days)
+    $component = Volt::test('inventory.medicine-lots', ['medicine' => $medicine]);
+    $lots = $component->viewData('lots');
+    expect($lots->first()->batch_number)->toBe('LOT-B');
+    expect($lots->last()->batch_number)->toBe('LOT-A');
+
+    // Sort by reception_date ASC -> LOT-B (yesterday) then LOT-A (today)
+    $component->call('sortBy', 'reception_date');
+    $lots = $component->viewData('lots');
+    expect($lots->first()->batch_number)->toBe('LOT-B');
+    expect($lots->last()->batch_number)->toBe('LOT-A');
+
+    // Toggle sorting direction -> desc -> LOT-A (today) then LOT-B (yesterday)
+    $component->call('sortBy', 'reception_date');
+    $lots = $component->viewData('lots');
+    expect($lots->first()->batch_number)->toBe('LOT-A');
+    expect($lots->last()->batch_number)->toBe('LOT-B');
+});
+
+test('it calculates days remaining and renders correct expiration alerts and stock summary', function () {
+    $user = User::factory()->create();
+    $this->actingAs($user);
+
+    $medicine = Medicine::factory()->create();
+    $supplier = Supplier::create([
+        'nit' => '12345678-5',
+        'dv' => 5,
+        'name' => 'Supplier Expiry',
+        'contact_person' => 'Jane',
+        'phone_number' => '123',
+        'email' => 'exp@test.com',
+        'address' => 'Addr',
+        'created_by' => $user->id,
+    ]);
+    $purchaseOrder = PurchaseOrder::create([
+        'supplier_id' => $supplier->id,
+        'status' => 'received',
+        'expected_date' => now()->toDateString(),
+        'received_at' => now()->toDateString(),
+        'total_estimated' => 100.00,
+        'created_by' => $user->id,
+    ]);
+
+    // Expired lot
+    Lot::create([
+        'medicine_id' => $medicine->id,
+        'purchase_order_id' => $purchaseOrder->id,
+        'batch_number' => 'LOT-EXPIRED',
+        'expiration_date' => now()->subDays(5)->toDateString(),
+        'current_quantity' => 5,
+        'initial_quantity' => 5,
+        'reception_date' => now()->toDateString(),
+        'unit_purchase_price' => 1.00,
+        'status' => 'active',
+        'created_by' => $user->id,
+    ]);
+
+    // Near expiration lot (25 days) - Red Warning
+    Lot::create([
+        'medicine_id' => $medicine->id,
+        'purchase_order_id' => $purchaseOrder->id,
+        'batch_number' => 'LOT-RED',
+        'expiration_date' => now()->addDays(25)->toDateString(),
+        'current_quantity' => 10,
+        'initial_quantity' => 10,
+        'reception_date' => now()->toDateString(),
+        'unit_purchase_price' => 1.00,
+        'status' => 'active',
+        'created_by' => $user->id,
+    ]);
+
+    // Near expiration lot (45 days) - Orange Warning
+    Lot::create([
+        'medicine_id' => $medicine->id,
+        'purchase_order_id' => $purchaseOrder->id,
+        'batch_number' => 'LOT-ORANGE',
+        'expiration_date' => now()->addDays(45)->toDateString(),
+        'current_quantity' => 15,
+        'initial_quantity' => 15,
+        'reception_date' => now()->toDateString(),
+        'unit_purchase_price' => 1.00,
+        'status' => 'active',
+        'created_by' => $user->id,
+    ]);
+
+    // Moderate expiration lot (100 days) - Yellow Warning
+    Lot::create([
+        'medicine_id' => $medicine->id,
+        'purchase_order_id' => $purchaseOrder->id,
+        'batch_number' => 'LOT-YELLOW',
+        'expiration_date' => now()->addDays(100)->toDateString(),
+        'current_quantity' => 20,
+        'initial_quantity' => 20,
+        'reception_date' => now()->toDateString(),
+        'unit_purchase_price' => 1.00,
+        'status' => 'active',
+        'created_by' => $user->id,
+    ]);
+
+    // Safe lot (200 days) - Safe (Slate)
+    Lot::create([
+        'medicine_id' => $medicine->id,
+        'purchase_order_id' => $purchaseOrder->id,
+        'batch_number' => 'LOT-SAFE',
+        'expiration_date' => now()->addDays(200)->toDateString(),
+        'current_quantity' => 25,
+        'initial_quantity' => 25,
+        'reception_date' => now()->toDateString(),
+        'unit_purchase_price' => 1.00,
+        'status' => 'active',
+        'created_by' => $user->id,
+    ]);
+
+    Volt::test('inventory.medicine-lots', ['medicine' => $medicine])
+        ->assertSee('LOT-EXPIRED')
+        ->assertSee('Vencido hace 5 días')
+        ->assertSeeHtml('bg-red-100 text-red-800')
+        ->assertSee('LOT-RED')
+        ->assertSee('25 días')
+        ->assertSee('LOT-ORANGE')
+        ->assertSee('45 días')
+        ->assertSeeHtml('bg-orange-100 text-orange-800')
+        ->assertSee('LOT-YELLOW')
+        ->assertSee('100 días')
+        ->assertSeeHtml('bg-yellow-100 text-yellow-800')
+        ->assertSee('LOT-SAFE')
+        ->assertSee('200 días')
+        ->assertSeeHtml('bg-slate-100 text-slate-700')
+        // Total Stock calculation
+        ->assertSee('Total de Existencias Físicas')
+        ->assertSee('75'); // 5 + 10 + 15 + 20 + 25 = 75
 });

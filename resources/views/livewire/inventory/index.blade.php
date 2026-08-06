@@ -18,17 +18,10 @@ new #[Layout('layouts.app')] class extends Component
     use WithPagination;
 
     // Tabs
-    public string $activeTab = 'lots'; // 'lots' or 'reception'
+    public string $activeTab = 'consolidated'; // 'consolidated' or 'reception'
 
-    // Lots Tab Properties
+    // Consolidated/Inventario Tab Properties
     public string $search = '';
-
-    public string $statusFilter = 'active'; // 'active', 'archived', 'all'
-
-    // Deletion Modal
-    public ?int $lotIdBeingDeleted = null;
-
-    public string $lotBatchBeingDeleted = '';
 
     // Reception Tab Properties
     public string $barcode = '';
@@ -86,11 +79,6 @@ new #[Layout('layouts.app')] class extends Component
     }
 
     public function updatingSearch(): void
-    {
-        $this->resetPage();
-    }
-
-    public function updatingStatusFilter(): void
     {
         $this->resetPage();
     }
@@ -162,7 +150,7 @@ new #[Layout('layouts.app')] class extends Component
             'supplier_id.required' => 'El proveedor es obligatorio.',
         ]);
 
-        // Expiry Date Check: expiration date must be in the future (relative to today)
+        // Expiry Date Check
         $expirationDate = Carbon::parse($this->expiration_date);
         if ($expirationDate->isPast() && ! $expirationDate->isToday()) {
             $this->addError('expiration_date', 'No se pueden ingresar productos vencidos.');
@@ -225,7 +213,6 @@ new #[Layout('layouts.app')] class extends Component
             $this->selectedMedicineId = $medicine->id;
             $this->selectedMedicineName = $medicine->name;
             $this->selectedMedicineSellingPrice = (float) $medicine->selling_price;
-            // set barcode to first main barcode if available
             $mainBarcode = $medicine->barcodes()->where('is_main', true)->first();
             $this->barcode = $mainBarcode ? $mainBarcode->barcode : '';
         }
@@ -272,7 +259,7 @@ new #[Layout('layouts.app')] class extends Component
         $this->reception_date = now()->format('Y-m-d');
 
         session()->flash('success', 'Ingreso de mercancía registrado con éxito.');
-        $this->activeTab = 'lots';
+        $this->activeTab = 'consolidated';
         $this->resetPage();
     }
 
@@ -284,7 +271,7 @@ new #[Layout('layouts.app')] class extends Component
         $this->temporaryLots = [];
         $this->reset(['barcode', 'selectedMedicineId', 'selectedMedicineName', 'selectedMedicineSellingPrice', 'batch_number', 'expiration_date', 'quantity', 'unit_purchase_price', 'status']);
         $this->reception_date = now()->format('Y-m-d');
-        $this->activeTab = 'lots';
+        $this->activeTab = 'consolidated';
     }
 
     /**
@@ -317,7 +304,10 @@ new #[Layout('layouts.app')] class extends Component
     public function saveQuickSupplier(SupplierService $supplierService): void
     {
         $this->validate([
-            'supplier_nit' => ['required', 'unique:suppliers,nit'],
+            'supplier_nit' => [
+                'required',
+                \Illuminate\Validation\Rule::unique('suppliers', 'nit')->whereNull('deleted_at'),
+            ],
             'supplier_dv' => ['required', 'integer', 'min:0', 'max:9'],
             'supplier_name' => ['required', 'string', 'max:150'],
             'supplier_contact_person' => ['required', 'string', 'max:100'],
@@ -351,65 +341,32 @@ new #[Layout('layouts.app')] class extends Component
         $this->resetSupplierForm();
     }
 
-    /**
-     * Confirm lot deletion.
-     */
-    public function confirmLotDeletion(int $id): void
-    {
-        $lot = Lot::findOrFail($id);
-        $this->lotIdBeingDeleted = $lot->id;
-        $this->lotBatchBeingDeleted = $lot->batch_number;
-        $this->resetErrorBag();
-        $this->dispatch('open-modal', 'confirm-lot-deletion');
-    }
-
-    /**
-     * Delete lot (logical soft delete).
-     */
-    public function deleteLot(LotService $lotService): void
-    {
-        if (! $this->lotIdBeingDeleted) {
-            return;
-        }
-
-        $lot = Lot::findOrFail($this->lotIdBeingDeleted);
-        $lotService->delete($lot);
-
-        $this->dispatch('close-modal', 'confirm-lot-deletion');
-        $this->reset(['lotIdBeingDeleted', 'lotBatchBeingDeleted']);
-
-        session()->flash('success', 'El lote ha sido eliminado con éxito.');
-    }
-
     public function with(): array
     {
-        $query = Lot::query()->with(['medicine', 'purchaseOrder.supplier']);
+        $medicineQuery = Medicine::query()
+            ->with(['concentrationUnit'])
+            ->withCount(['lots as active_lots_count' => function ($q) {
+                $q->where('status', 'active');
+            }])
+            ->withSum(['lots as total_stock' => function ($q) {
+                $q->where('status', 'active');
+            }], 'current_quantity');
 
-        // Status Filter
-        if ($this->statusFilter === 'active') {
-            // automatically loaded by Eloquent SoftDeletes
-        } elseif ($this->statusFilter === 'archived') {
-            $query->onlyTrashed();
-        } elseif ($this->statusFilter === 'all') {
-            $query->withTrashed();
-        }
-
-        // Search Filter (by medicine name or batch number)
         if (! empty(trim($this->search))) {
             $term = '%'.trim($this->search).'%';
-            $query->where(function ($q) use ($term) {
-                $q->where('batch_number', 'like', $term)
-                    ->orWhereHas('medicine', function ($mq) use ($term) {
-                        $mq->where('name', 'like', $term)
-                            ->orWhere('generic_name', 'like', $term);
+            $medicineQuery->where(function ($q) use ($term) {
+                $q->where('name', 'like', $term)
+                    ->orWhere('generic_name', 'like', $term)
+                    ->orWhereHas('barcodes', function ($bq) use ($term) {
+                        $bq->where('barcode', 'like', $term);
                     });
             });
         }
 
-        $query->orderBy('expiration_date', 'asc');
+        $medicineQuery->orderBy('name', 'asc');
 
         return [
-            'lots' => $query->paginate(15),
+            'medicines' => $medicineQuery->paginate(15),
             'suppliers' => Supplier::orderBy('name')->get(),
         ];
     }
@@ -421,7 +378,7 @@ new #[Layout('layouts.app')] class extends Component
         <div>
             <h1 class="text-3xl font-extrabold text-blue-900 dark:text-white tracking-tight">Gestión de Inventario</h1>
             <p class="text-sm text-slate-600 dark:text-slate-400 mt-2">
-                Consulta los lotes activos en bodega, controla alertas sanitarias de vencimiento y registra la entrada de nueva mercancía.
+                Consulta la consolidación de existencias por medicamento y registra el ingreso de nueva mercancía.
             </p>
         </div>
     </div>
@@ -440,10 +397,10 @@ new #[Layout('layouts.app')] class extends Component
     <div class="border-b border-slate-200 mb-6">
         <ul class="flex flex-wrap -mb-px text-sm font-medium text-center">
             <li class="mr-2">
-                <button type="button" wire:click="switchTab('lots')"
-                    class="inline-flex items-center gap-2 p-4 border-b-2 rounded-t-lg transition-all duration-150 {{ $activeTab === 'lots' ? 'text-blue-900 border-blue-900 font-bold' : 'text-slate-500 border-transparent hover:text-slate-800 hover:border-slate-300' }}">
+                <button type="button" wire:click="switchTab('consolidated')"
+                    class="inline-flex items-center gap-2 p-4 border-b-2 rounded-t-lg transition-all duration-150 {{ $activeTab === 'consolidated' ? 'text-blue-900 border-blue-900 font-bold' : 'text-slate-500 border-transparent hover:text-slate-800 hover:border-slate-300' }}">
                     <x-tabler-packages class="w-5 h-5" />
-                    <span>Control de Lotes</span>
+                    <span>Inventario</span>
                 </button>
             </li>
             <li class="mr-2">
@@ -456,17 +413,17 @@ new #[Layout('layouts.app')] class extends Component
         </ul>
     </div>
 
-    <!-- Tab 1: Control de Lotes -->
-    @if ($activeTab === 'lots')
+    <!-- Tab 1: Inventario Consolidado -->
+    @if ($activeTab === 'consolidated')
         <!-- Filters -->
         <div class="bg-white border border-slate-100 shadow-sm rounded-2xl p-6 mb-6">
-            <h2 class="text-lg font-bold text-blue-900 mb-4">Filtrar Lotes</h2>
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <h2 class="text-lg font-bold text-blue-900 mb-4">Filtrar Medicamentos</h2>
+            <div class="grid grid-cols-1 gap-4">
                 <!-- Search -->
-                <div class="md:col-span-2">
+                <div>
                     <label for="search" class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">Búsqueda</label>
                     <div class="relative">
-                        <input type="text" id="search" wire:model.live.debounce.300ms="search" placeholder="Buscar por número de lote o medicamento..."
+                        <input type="text" id="search" wire:model.live.debounce.300ms="search" placeholder="Buscar medicamento por nombre o código de barras..."
                             class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all">
                         @if($search)
                             <button type="button" wire:click="$set('search', '')" class="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600">
@@ -477,106 +434,56 @@ new #[Layout('layouts.app')] class extends Component
                         @endif
                     </div>
                 </div>
-
-                <!-- Status Filter -->
-                <div>
-                    <label for="statusFilter" class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">Estado de Eliminación</label>
-                    <select id="statusFilter" wire:model.live="statusFilter"
-                        class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all cursor-pointer">
-                        <option value="active">Activos</option>
-                        <option value="archived">Eliminados (Archivados)</option>
-                        <option value="all">Todos</option>
-                    </select>
-                </div>
             </div>
         </div>
 
         <!-- Table -->
         <div class="bg-white border border-slate-100 shadow-sm rounded-2xl overflow-hidden">
-            @if($lots->isEmpty())
+            @if($medicines->isEmpty())
                 <div class="p-12 text-center">
                     <div class="inline-flex p-4 bg-slate-50 text-slate-400 rounded-full mb-4">
                         <x-tabler-packages class="w-12 h-12" />
                     </div>
-                    <h3 class="text-lg font-bold text-blue-900 mb-1">Sin lotes registrados</h3>
-                    <p class="text-sm text-slate-500">No se encontraron lotes que coincidan con la búsqueda o el filtro.</p>
+                    <h3 class="text-lg font-bold text-blue-900 mb-1">Sin medicamentos registrados</h3>
+                    <p class="text-sm text-slate-500">No se encontraron medicamentos que coincidan con la búsqueda.</p>
                 </div>
             @else
                 <div class="overflow-x-auto">
                     <table class="min-w-full divide-y divide-slate-100">
                         <thead class="bg-slate-50">
                             <tr>
-                                <th scope="col" class="px-6 py-4 text-left text-xs font-bold text-blue-900 uppercase tracking-wider">Medicamento</th>
-                                <th scope="col" class="px-6 py-4 text-left text-xs font-bold text-blue-900 uppercase tracking-wider">Lote</th>
-                                <th scope="col" class="px-6 py-4 text-center class-center text-xs font-bold text-blue-900 uppercase tracking-wider">Vence</th>
-                                <th scope="col" class="px-6 py-4 text-center text-xs font-bold text-blue-900 uppercase tracking-wider">Existencias</th>
-                                <th scope="col" class="px-6 py-4 text-right text-xs font-bold text-blue-900 uppercase tracking-wider">Costo Unit.</th>
-                                <th scope="col" class="px-6 py-4 text-left text-xs font-bold text-blue-900 uppercase tracking-wider">Proveedor</th>
-                                <th scope="col" class="px-6 py-4 text-center text-xs font-bold text-blue-900 uppercase tracking-wider">Estado</th>
+                                <th scope="col" class="px-6 py-4 text-left text-xs font-bold text-blue-900 uppercase tracking-wider">Nombre Comercial</th>
+                                <th scope="col" class="px-6 py-4 text-left text-xs font-bold text-blue-900 uppercase tracking-wider">Nombre Genérico</th>
+                                <th scope="col" class="px-6 py-4 text-left text-xs font-bold text-blue-900 uppercase tracking-wider">Concentración</th>
+                                <th scope="col" class="px-6 py-4 text-center text-xs font-bold text-blue-900 uppercase tracking-wider">Stock Total (Unidades)</th>
+                                <th scope="col" class="px-6 py-4 text-center text-xs font-bold text-blue-900 uppercase tracking-wider">Cantidad de Lotes Activos</th>
                                 <th scope="col" class="px-6 py-4 text-right text-xs font-bold text-blue-900 uppercase tracking-wider">Acciones</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-slate-100 bg-white">
-                            @foreach($lots as $lot)
+                            @foreach($medicines as $medicine)
                                 <tr class="hover:bg-slate-50/50 transition-colors">
-                                    <td class="px-6 py-4">
-                                        <div class="text-sm font-semibold text-blue-900">{{ $lot->medicine->name }}</div>
-                                        @if($lot->medicine->generic_name)
-                                            <div class="text-xs text-slate-500">{{ $lot->medicine->generic_name }}</div>
-                                        @endif
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <div class="text-sm font-semibold text-blue-900">{{ $medicine->name }}</div>
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap">
-                                        <span class="text-sm font-mono bg-slate-100 text-slate-800 px-2 py-1 rounded font-medium">{{ $lot->batch_number }}</span>
+                                        <div class="text-sm text-slate-600">{{ $medicine->generic_name ?: 'N/A' }}</div>
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-center text-sm">
-                                        @php
-                                            $daysLeft = now()->diffInDays(\Carbon\Carbon::parse($lot->expiration_date), false);
-                                        @endphp
-                                        @if($daysLeft < 0)
-                                            <span class="text-red-600 font-bold" title="Vencido">{{ \Carbon\Carbon::parse($lot->expiration_date)->format('d/m/Y') }}</span>
-                                        @elseif($daysLeft <= 90)
-                                            <span class="text-amber-600 font-bold" title="Por vencer en {{ $daysLeft }} días">{{ \Carbon\Carbon::parse($lot->expiration_date)->format('d/m/Y') }}</span>
-                                        @else
-                                            <span class="text-slate-700">{{ \Carbon\Carbon::parse($lot->expiration_date)->format('d/m/Y') }}</span>
-                                        @endif
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-600">
+                                        {{ $medicine->concentration_formatted }}
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-center text-sm font-semibold text-slate-800">
-                                        {{ $lot->current_quantity }} / {{ $lot->initial_quantity }}
+                                        {{ $medicine->total_stock ?? 0 }}
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm text-slate-800 font-mono">
-                                        ${{ number_format($lot->unit_purchase_price, 2) }}
-                                    </td>
-                                    <td class="px-6 py-4 text-sm text-slate-700">
-                                        {{ $lot->purchaseOrder->supplier->name ?? 'N/A' }}
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-center">
-                                        @if($lot->status === 'active')
-                                            <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-lime-50 text-lime-700 border border-lime-100">
-                                                Activo
-                                            </span>
-                                        @elseif($lot->status === 'blocked')
-                                            <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-amber-50 text-amber-700 border border-amber-100">
-                                                Bloqueado
-                                            </span>
-                                        @else
-                                            <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-red-50 text-red-700 border border-red-100">
-                                                Dañado
-                                            </span>
-                                        @endif
+                                    <td class="px-6 py-4 whitespace-nowrap text-center text-sm font-semibold text-slate-800">
+                                        {{ $medicine->active_lots_count }}
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                        @if($lot->deleted_at)
-                                            <div class="text-xs text-slate-400 text-right">
-                                                <span>Eliminado por {{ $lot->deleter->name ?? 'Sistema' }}</span><br>
-                                                <span>el {{ \Carbon\Carbon::parse($lot->deleted_at)->format('d/m/Y H:i') }}</span>
-                                            </div>
-                                        @else
-                                            <button type="button" wire:click="confirmLotDeletion({{ $lot->id }})"
-                                                class="inline-flex items-center text-red-600 hover:text-red-900 transition-colors gap-1 cursor-pointer">
-                                                <x-tabler-trash class="w-4 h-4" />
-                                                <span>Eliminar</span>
-                                            </button>
-                                        @endif
+                                        <a href="{{ route('inventory.medicine-lots', $medicine->id) }}" wire:navigate
+                                            class="inline-flex items-center text-blue-900 hover:text-lime-500 font-bold transition-colors gap-1">
+                                            <x-tabler-eye class="w-4 h-4" />
+                                            <span>Ver Detalle</span>
+                                        </a>
                                     </td>
                                 </tr>
                             @endforeach
@@ -586,7 +493,7 @@ new #[Layout('layouts.app')] class extends Component
 
                 <!-- Pagination -->
                 <div class="px-6 py-4 bg-slate-50 border-t border-slate-100">
-                    {{ $lots->links() }}
+                    {{ $medicines->links() }}
                 </div>
             @endif
         </div>
@@ -823,29 +730,6 @@ new #[Layout('layouts.app')] class extends Component
             </div>
         </div>
     @endif
-
-    <!-- Deletion Confirmation Modal -->
-    <x-modal name="confirm-lot-deletion" focusable>
-        <div class="p-6">
-            <h2 class="text-lg font-bold text-blue-900">
-                ¿Está seguro de que desea eliminar el lote?
-            </h2>
-
-            <p class="mt-2 text-sm text-slate-600 font-normal">
-                Esta acción archivará el lote <span class="font-semibold text-blue-950 font-mono">"{{ $lotBatchBeingDeleted }}"</span>. Dejará de sumarse a las existencias activas para la venta, pero la información histórica quedará almacenada para futuras auditorías de trazabilidad.
-            </p>
-
-            <div class="mt-6 flex justify-end gap-3">
-                <x-secondary-button x-on:click="$dispatch('close')" class="cursor-pointer">
-                    Cancelar
-                </x-secondary-button>
-
-                <x-danger-button wire:click="deleteLot" class="cursor-pointer">
-                    Eliminar
-                </x-danger-button>
-            </div>
-        </div>
-    </x-modal>
 
     <!-- Quick Supplier Modal -->
     @if ($showSupplierModal)

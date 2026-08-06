@@ -11,7 +11,7 @@ class InventoryMovement extends Model
 
     const UPDATED_AT = null;
 
-    protected $fillable = ['lot_id', 'type', 'quantity', 'previous_balance', 'new_balance', 'concept', 'reference_id', 'created_at', 'created_by'];
+    protected $fillable = ['lot_id', 'type', 'quantity', 'previous_balance', 'new_balance', 'concept', 'adjustment_reason', 'observations', 'reference_id', 'created_at', 'created_by'];
 
     public function lot()
     {

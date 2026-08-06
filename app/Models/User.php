@@ -12,7 +12,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
-#[Fillable(['first_name', 'middle_name', 'last_name', 'second_last_name', 'phone_number', 'email', 'password', 'created_by', 'updated_by', 'deleted_by'])]
+#[Fillable(['first_name', 'middle_name', 'last_name', 'second_last_name', 'phone_number', 'email', 'password', 'role', 'created_by', 'updated_by', 'deleted_by'])]
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable
 {
@@ -55,5 +55,21 @@ class User extends Authenticatable
     public function deleter()
     {
         return $this->belongsTo(User::class, 'deleted_by');
+    }
+
+    /**
+     * Check if the user is an Administrator.
+     */
+    public function isAdmin(): bool
+    {
+        return $this->role === 'admin';
+    }
+
+    /**
+     * Check if the user is a Warehouse Assistant.
+     */
+    public function isWarehouseAssistant(): bool
+    {
+        return $this->role === 'warehouse_assistant';
     }
 }

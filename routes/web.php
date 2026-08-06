@@ -26,11 +26,21 @@ Route::middleware(['auth'])->group(function () {
     Volt::route('sanitary-registries/create', 'sanitary-registries.create')->name('sanitary-registries.create');
     Volt::route('sanitary-registries/{sanitary_registry}/edit', 'sanitary-registries.edit')->name('sanitary-registries.edit');
 
+    Volt::route('suppliers', 'suppliers.index')->name('suppliers.index');
+    Volt::route('suppliers/create', 'suppliers.create')->name('suppliers.create');
+    Volt::route('suppliers/{supplier}/edit', 'suppliers.edit')->name('suppliers.edit');
+
+    Volt::route('customers', 'customers.index')->name('customers.index');
+    Volt::route('customers/create', 'customers.create')->name('customers.create');
+    Volt::route('customers/{customer}/edit', 'customers.edit')->name('customers.edit');
+
     Volt::route('medicines', 'medicines.index')->name('medicines.index');
     Volt::route('medicines/create', 'medicines.create')->name('medicines.create');
     Volt::route('medicines/{medicine}/edit', 'medicines.edit')->name('medicines.edit');
 
     Volt::route('inventory', 'inventory.index')->name('inventory.index');
+    Volt::route('inventory/medicines/{medicine}/lots', 'inventory.medicine-lots')->name('inventory.medicine-lots');
+    Volt::route('inventory/lots/{lot}/logs', 'inventory.lot-logs')->name('inventory.lots.logs');
 });
 
 require __DIR__.'/auth.php';

@@ -371,7 +371,7 @@
                         </a>
                     </li>
                     <li>
-                        <a href="#"
+                        <a href="{{ route('suppliers.index') }}" wire:navigate
                             class="flex items-center p-2 border-l-4 text-base font-medium transition-all duration-150 ease-in-out group {{ $providersActive ? 'bg-blue-50 text-blue-900 border-blue-900 font-semibold rounded-r-lg' : 'text-gray-900 border-transparent hover:bg-gray-100 rounded-lg' }}">
                             <x-tabler-truck-delivery
                                 class="w-6 h-6 transition duration-75 {{ $providersActive ? 'text-blue-900' : 'text-gray-500 group-hover:text-gray-900' }}" />
@@ -379,7 +379,7 @@
                         </a>
                     </li>
                     <li>
-                        <a href="#"
+                        <a href="{{ route('customers.index') }}" wire:navigate
                             class="flex items-center p-2 border-l-4 text-base font-medium transition-all duration-150 ease-in-out group {{ $clientsActive ? 'bg-blue-50 text-blue-900 border-blue-900 font-semibold rounded-r-lg' : 'text-gray-900 border-transparent hover:bg-gray-100 rounded-lg' }}">
                             <x-tabler-users
                                 class="w-6 h-6 transition duration-75 {{ $clientsActive ? 'text-blue-900' : 'text-gray-500 group-hover:text-gray-900' }}" />
