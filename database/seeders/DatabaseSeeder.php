@@ -15,6 +15,11 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
+        if (app()->environment('production')) {
+            $this->command->warn('Skipping development seeders in production environment.');
+            return;
+        }
+
         // User::factory(10)->create();
 
         User::factory()->create([
