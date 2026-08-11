@@ -27,7 +27,7 @@ _Features completadas, en orden de implementación._
 
 _Lo próximo a abordar. Idealmente una sola feature "en curso" a la vez._
 
-- **<Nombre>** — <qué aportaría>.
+- **031 · Sales and Invoicing Process (HU 24)** — Permite el registro de ventas y facturación de salida seleccionando lotes específicos bajo rotación FEFO, descarga atómica de inventario, validaciones de crédito y generación de facturas en PDF.
 
 
 ## Backlog / ideas 💡
