@@ -18,7 +18,7 @@
 </head>
 
 <body class="font-sans antialiased">
-    <div class="antialiased bg-main-bg">
+    <div class="min-h-screen bg-main-bg antialiased">
         <nav class="bg-navbar border-b border-gray-200 px-4 py-2.5 fixed left-0 right-0 top-0 z-50">
             <div class="flex flex-wrap justify-between items-center">
                 <div class="flex justify-start items-center">
@@ -420,7 +420,7 @@
         </aside>
 
 
-        <main class="p-4 md:ml-64 h-auto pt-20">
+        <main class="p-4 md:ml-64 min-w-0 h-auto pt-20">
             {{ $slot }}
         </main>
     </div>
