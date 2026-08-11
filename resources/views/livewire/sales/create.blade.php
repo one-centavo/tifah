@@ -506,7 +506,7 @@ new #[Layout('layouts.app')] class extends Component
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
         <!-- Left Column: Customer & Product Scanner & Cart Table (Span 2) -->
-        <div class="lg:col-span-2 space-y-6">
+        <div class="lg:col-span-2 space-y-6 min-w-0">
 
             <!-- Card 1: Customer Selection -->
             <div class="bg-white border border-slate-200 shadow-sm rounded-2xl p-5">
@@ -674,7 +674,7 @@ new #[Layout('layouts.app')] class extends Component
             </div>
 
             <!-- Card 3: Temporary Cart Items Table -->
-            <div class="bg-white border border-slate-200 shadow-sm rounded-2xl p-5">
+            <div class="bg-white border border-slate-200 shadow-sm rounded-2xl p-5 min-w-0">
                 <div class="flex items-center justify-between mb-3">
                     <h2 class="text-base font-semibold text-blue-900 flex items-center gap-2">
                         <svg class="w-5 h-5 text-blue-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -688,7 +688,7 @@ new #[Layout('layouts.app')] class extends Component
                     </span>
                 </div>
 
-                <div class="overflow-x-auto">
+                <div class="overflow-x-auto min-w-0">
                     <table class="w-full text-left text-sm border-collapse">
                         <thead>
                             <tr class="border-b border-slate-200 text-xs font-bold text-slate-500 uppercase">
@@ -762,7 +762,7 @@ new #[Layout('layouts.app')] class extends Component
         </div>
 
         <!-- Right Column: Payment & Totals Summary -->
-        <div class="space-y-6">
+        <div class="space-y-6 min-w-0">
 
             <!-- Card: Payment Terms & Checkout -->
             <div class="bg-white border border-slate-200 shadow-sm rounded-2xl p-5 space-y-4">
