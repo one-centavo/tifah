@@ -19,17 +19,18 @@
 
 
 ## 3. Livewire Volt Components & UI
-- [ ] Create `resources/views/livewire/sales/create.blade.php` Volt component for point-of-sale invoicing.
-- [ ] Implement reactive customer search by NIT / commercial name.
-- [ ] Implement barcode scanning input with auto-focus and manual name search autocomplete.
-- [ ] Implement missing medicine notification and quick registration modal shortcut.
-- [ ] Render FEFO lot selector with expiry dates, stock countdowns, and warning badges.
-- [ ] Add manual lot override selection with row-locking toggle.
-- [ ] Render interactive temporary cart table with editable unit price for discounts and item deletion.
-- [ ] Implement payment method selector (Cash, Transfer, Credit) with conditional credit due date input.
-- [ ] Implement pre-save quantity completeness validator with "Autocompletar Lotes Faltantes" action.
-- [ ] Implement final submission trigger with concurrency error handling and success feedback.
+- [x] Create `resources/views/livewire/sales/create.blade.php` Volt component for point-of-sale invoicing.
+- [x] Implement reactive customer search by NIT / commercial name.
+- [x] Implement barcode scanning input with auto-focus and manual name search autocomplete.
+- [x] Implement missing medicine notification and quick registration modal shortcut.
+- [x] Render FEFO lot selector with expiry dates, stock countdowns, and warning badges.
+- [x] Add manual lot override selection with row-locking toggle.
+- [x] Render interactive temporary cart table with editable unit price for discounts and item deletion.
+- [x] Implement payment method selector (Cash, Transfer, Credit) with conditional credit due date input.
+- [x] Implement pre-save quantity completeness validator with "Autocompletar Lotes Faltantes" action.
+- [x] Implement final submission trigger with concurrency error handling and success feedback.
 - [ ] Create `resources/views/livewire/bills/index.blade.php` to list invoices with status badges, search, and filtering.
+
 - [ ] Create invoice details modal and "Anular Factura" workflow with mandatory reason prompt.
 
 ## 4. PDF Generation & Printing
