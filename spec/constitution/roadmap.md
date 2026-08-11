@@ -21,6 +21,7 @@ _Features completadas, en orden de implementación._
 13. **027 · Register Customer (HU 20)** — Permite registrar y administrar la información de farmacias y clientes institucionales, aplicando el cálculo automático del DV de la DIAN, clasificación por ciudad, e integridad referencial de borrado suave condicionada a la ausencia de facturas asociadas.
 14. **028 · Edit Client (HU 21)** — Permite modificar la información de clientes registrados, validando la unicidad de NIT en registros activos, recalculando en tiempo real el DV de la DIAN, preservando la auditoría original y reflejando cambios de forma inmediata.
 15. **029 · Show and Filter Customers (HU 22)** — Permite visualizar, buscar, ordenar y filtrar los clientes registrados por su estado (activo/archivado) y ciudad, incluyendo acciones de edición y borrado suave.
+16. **030 · Delete Customer (HU 23)** — Permite archivar un cliente mediante borrado suave desde el listado, validando la inexistencia de facturas asociadas en el histórico y registrando la auditoría de eliminación.
 
 ## Siguiente 🔜
 
