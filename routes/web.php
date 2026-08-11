@@ -5,7 +5,7 @@ use Livewire\Volt\Volt;
 
 Route::redirect('/', 'login');
 
-Route::view('dashboard', 'dashboard')
+Volt::route('dashboard', 'dashboard.index')
     ->middleware(['auth', 'verified'])
     ->name('dashboard');
 
