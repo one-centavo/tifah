@@ -1,10 +1,11 @@
 # 031 · Sales and Invoicing Process — Tasks
 
 ## 1. Database & Migrations
-- [ ] Ensure `bills` table includes `invoice_number`, `payment_method`, `payment_due_date`, `total_amount`, `annulled_reason`, `annulled_by`, and `annulled_at`.
-- [ ] Ensure `bill_details` table includes `bill_id`, `lot_id`, `quantity`, `unit_price`, and `subtotal`.
-- [ ] Add relationship methods in `Bill`, `BillDetail`, `Lot`, and `Customer` models.
-- [ ] Update `Bill` model to prevent deletion via model events / soft delete / restrictions.
+- [x] Ensure `bills` table includes `invoice_number`, `payment_method`, `payment_due_date`, `total_amount`, `annulled_reason`, `annulled_by`, and `annulled_at`.
+- [x] Ensure `bill_details` table includes `bill_id`, `lot_id`, `quantity`, `unit_price`, and `subtotal`.
+- [x] Add relationship methods in `Bill`, `BillDetail`, `Lot`, and `Customer` models.
+- [x] Update `Bill` model to prevent deletion via model events / soft delete / restrictions.
+
 
 ## 2. Business Logic & Service Layer
 - [ ] Create `App\Services\BillService` / `SaleService`.
