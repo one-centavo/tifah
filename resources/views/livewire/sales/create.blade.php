@@ -481,12 +481,12 @@ new #[Layout('layouts.app')] class extends Component
     <div class="mb-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
             <div class="flex items-center gap-2">
-                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-300">
+                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-blue-100 text-blue-800">
                     Salida de Mercancía
                 </span>
             </div>
-            <h1 class="text-2xl font-bold text-blue-900 dark:text-white mt-1">Proceso de Venta y Facturación</h1>
-            <p class="text-sm text-slate-600 dark:text-slate-400">
+            <h1 class="text-2xl font-bold text-blue-900 mt-1">Proceso de Venta y Facturación</h1>
+            <p class="text-sm text-slate-600">
                 Selecciona lotes con rotación FEFO, valida existencias en tiempo real y emite facturas de salida.
             </p>
         </div>
@@ -509,10 +509,10 @@ new #[Layout('layouts.app')] class extends Component
         <div class="lg:col-span-2 space-y-6">
 
             <!-- Card 1: Customer Selection -->
-            <div class="bg-white dark:bg-gray-800 border border-slate-100 dark:border-gray-700 shadow-sm rounded-2xl p-5">
+            <div class="bg-white border border-slate-200 shadow-sm rounded-2xl p-5">
                 <div class="flex items-center justify-between mb-3">
-                    <h2 class="text-base font-semibold text-blue-900 dark:text-white flex items-center gap-2">
-                        <svg class="w-5 h-5 text-blue-700 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <h2 class="text-base font-semibold text-blue-900 flex items-center gap-2">
+                        <svg class="w-5 h-5 text-blue-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
                         </svg>
                         <span>1. Seleccionar Cliente</span>
@@ -533,7 +533,7 @@ new #[Layout('layouts.app')] class extends Component
                                 wire:model.live.debounce.250ms="customerSearch"
                                 @focus="open = true"
                                 placeholder="Buscar cliente por NIT o Razón Social..."
-                                class="w-full pl-10 pr-4 py-2.5 bg-slate-50 dark:bg-gray-700/50 border border-slate-200 dark:border-gray-600 rounded-xl text-sm focus:ring-2 focus:ring-blue-900 dark:focus:ring-blue-400 text-slate-800 dark:text-slate-100 placeholder-slate-400">
+                                class="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-900 text-slate-800 placeholder-slate-400">
                             
                             <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                                 <svg class="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -544,21 +544,21 @@ new #[Layout('layouts.app')] class extends Component
 
                         <!-- Dropdown Options -->
                         <div x-show="open"
-                            class="absolute z-20 mt-1 w-full bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-slate-100 dark:border-gray-700 max-h-60 overflow-y-auto divide-y divide-slate-100 dark:divide-gray-700">
+                            class="absolute z-20 mt-1 w-full bg-white rounded-xl shadow-lg border border-slate-200 max-h-60 overflow-y-auto divide-y divide-slate-100">
                             @forelse($this->customers as $customer)
                                 <button type="button"
                                     wire:click="selectCustomer({{ $customer->id }})"
-                                    class="w-full text-left px-4 py-3 hover:bg-blue-50 dark:hover:bg-gray-700 transition flex items-center justify-between">
+                                    class="w-full text-left px-4 py-3 hover:bg-blue-50 transition flex items-center justify-between">
                                     <div>
-                                        <div class="font-semibold text-sm text-slate-900 dark:text-white">{{ $customer->name }}</div>
-                                        <div class="text-xs text-slate-500 dark:text-slate-400">NIT: {{ $customer->nit }}-{{ $customer->dv }} &bull; {{ $customer->city }}</div>
+                                        <div class="font-semibold text-sm text-slate-900">{{ $customer->name }}</div>
+                                        <div class="text-xs text-slate-500">NIT: {{ $customer->nit }}-{{ $customer->dv }} &bull; {{ $customer->city }}</div>
                                     </div>
                                     <div class="text-right">
                                         <span class="text-xs px-2 py-0.5 rounded-full bg-green-100 text-green-800 font-medium">Activo</span>
                                     </div>
                                 </button>
                             @empty
-                                <div class="px-4 py-3 text-sm text-slate-500 dark:text-slate-400 text-center">
+                                <div class="px-4 py-3 text-sm text-slate-500 text-center">
                                     No se encontraron clientes registrados con ese criterio.
                                 </div>
                             @endforelse
@@ -566,22 +566,22 @@ new #[Layout('layouts.app')] class extends Component
                     </div>
                 @else
                     <!-- Selected Customer Card -->
-                    <div class="p-3.5 bg-blue-50/60 dark:bg-blue-950/30 border border-blue-100 dark:border-blue-900/50 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div class="p-3.5 bg-blue-50/60 border border-blue-100 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                         <div>
                             <div class="flex items-center gap-2">
-                                <span class="font-bold text-sm text-blue-950 dark:text-blue-100">{{ $this->selectedCustomer->name }}</span>
-                                <span class="text-xs text-blue-700 dark:text-blue-300 font-mono bg-blue-100/80 dark:bg-blue-900 px-2 py-0.5 rounded">
+                                <span class="font-bold text-sm text-blue-950">{{ $this->selectedCustomer->name }}</span>
+                                <span class="text-xs text-blue-700 font-mono bg-blue-100/80 px-2 py-0.5 rounded">
                                     NIT {{ $this->selectedCustomer->nit }}-{{ $this->selectedCustomer->dv }}
                                 </span>
                             </div>
-                            <div class="text-xs text-slate-600 dark:text-slate-400 mt-1">
+                            <div class="text-xs text-slate-600 mt-1">
                                 {{ $this->selectedCustomer->address }} &bull; {{ $this->selectedCustomer->city }} &bull; Tel: {{ $this->selectedCustomer->phone_number }}
                             </div>
                         </div>
 
-                        <div class="text-right border-t sm:border-t-0 pt-2 sm:pt-0 sm:border-l border-blue-200 dark:border-blue-800 sm:pl-4">
+                        <div class="text-right border-t sm:border-t-0 pt-2 sm:pt-0 sm:border-l border-blue-200 sm:pl-4">
                             <div class="text-xs text-slate-500">Cupo Crédito</div>
-                            <div class="font-bold text-sm text-slate-900 dark:text-white">
+                            <div class="font-bold text-sm text-slate-900">
                                 ${{ number_format((float) $this->selectedCustomer->credit_limit, 0, ',', '.') }}
                             </div>
                         </div>
@@ -594,10 +594,10 @@ new #[Layout('layouts.app')] class extends Component
             </div>
 
             <!-- Card 2: Product Barcode & Search Input -->
-            <div class="bg-white dark:bg-gray-800 border border-slate-100 dark:border-gray-700 shadow-sm rounded-2xl p-5">
+            <div class="bg-white border border-slate-200 shadow-sm rounded-2xl p-5">
                 <div class="flex items-center justify-between mb-3">
-                    <h2 class="text-base font-semibold text-blue-900 dark:text-white flex items-center gap-2">
-                        <svg class="w-5 h-5 text-blue-700 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <h2 class="text-base font-semibold text-blue-900 flex items-center gap-2">
+                        <svg class="w-5 h-5 text-blue-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"></path>
                         </svg>
                         <span>2. Escaneo o Búsqueda de Medicamento</span>
@@ -613,7 +613,7 @@ new #[Layout('layouts.app')] class extends Component
                                 @focus="dropdownOpen = true"
                                 autofocus
                                 placeholder="Escanear código de barras o escribir nombre del medicamento..."
-                                class="w-full pl-10 pr-4 py-2.5 bg-slate-50 dark:bg-gray-700/50 border border-slate-200 dark:border-gray-600 rounded-xl text-sm focus:ring-2 focus:ring-blue-900 dark:focus:ring-blue-400 text-slate-800 dark:text-slate-100 placeholder-slate-400">
+                                class="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-900 text-slate-800 placeholder-slate-400">
                             
                             <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                                 <svg class="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -632,14 +632,14 @@ new #[Layout('layouts.app')] class extends Component
                     <!-- Autocomplete Search Dropdown -->
                     @if(strlen(trim($this->productQuery)) >= 2 && $this->foundMedicines->count() > 0)
                         <div x-show="dropdownOpen"
-                            class="absolute z-20 mt-1 w-full bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-slate-100 dark:border-gray-700 max-h-64 overflow-y-auto divide-y divide-slate-100 dark:divide-gray-700">
+                            class="absolute z-20 mt-1 w-full bg-white rounded-xl shadow-lg border border-slate-200 max-h-64 overflow-y-auto divide-y divide-slate-100">
                             @foreach($this->foundMedicines as $med)
                                 <button type="button"
                                     wire:click="openLotModal({{ $med->id }})"
-                                    class="w-full text-left px-4 py-3 hover:bg-blue-50 dark:hover:bg-gray-700 transition flex items-center justify-between">
+                                    class="w-full text-left px-4 py-3 hover:bg-blue-50 transition flex items-center justify-between">
                                     <div>
-                                        <div class="font-semibold text-sm text-slate-900 dark:text-white">{{ $med->name }}</div>
-                                        <div class="text-xs text-slate-500 dark:text-slate-400">
+                                        <div class="font-semibold text-sm text-slate-900">{{ $med->name }}</div>
+                                        <div class="text-xs text-slate-500">
                                             {{ $med->presentation }} &bull; Precio: ${{ number_format((float) $med->selling_price, 0, ',', '.') }}
                                         </div>
                                     </div>
@@ -656,12 +656,12 @@ new #[Layout('layouts.app')] class extends Component
 
                 <!-- Missing Medicine Alert & Quick Register -->
                 @if($productSearchError)
-                    <div class="mt-3 p-3 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 rounded-xl flex items-center justify-between gap-3">
+                    <div class="mt-3 p-3 bg-amber-50 border border-amber-200 rounded-xl flex items-center justify-between gap-3">
                         <div class="flex items-center gap-2">
                             <svg class="w-5 h-5 text-amber-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
                             </svg>
-                            <span class="text-xs font-medium text-amber-900 dark:text-amber-200">{{ $productSearchError }}</span>
+                            <span class="text-xs font-medium text-amber-900">{{ $productSearchError }}</span>
                         </div>
 
                         <button type="button"
@@ -674,10 +674,10 @@ new #[Layout('layouts.app')] class extends Component
             </div>
 
             <!-- Card 3: Temporary Cart Items Table -->
-            <div class="bg-white dark:bg-gray-800 border border-slate-100 dark:border-gray-700 shadow-sm rounded-2xl p-5">
+            <div class="bg-white border border-slate-200 shadow-sm rounded-2xl p-5">
                 <div class="flex items-center justify-between mb-3">
-                    <h2 class="text-base font-semibold text-blue-900 dark:text-white flex items-center gap-2">
-                        <svg class="w-5 h-5 text-blue-700 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <h2 class="text-base font-semibold text-blue-900 flex items-center gap-2">
+                        <svg class="w-5 h-5 text-blue-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path>
                         </svg>
                         <span>3. Renglones de la Venta ({{ count($cart) }})</span>
@@ -691,7 +691,7 @@ new #[Layout('layouts.app')] class extends Component
                 <div class="overflow-x-auto">
                     <table class="w-full text-left text-sm border-collapse">
                         <thead>
-                            <tr class="border-b border-slate-200 dark:border-gray-700 text-xs font-bold text-slate-500 uppercase">
+                            <tr class="border-b border-slate-200 text-xs font-bold text-slate-500 uppercase">
                                 <th class="py-2.5 px-3">Producto</th>
                                 <th class="py-2.5 px-3">Lote</th>
                                 <th class="py-2.5 px-3">Vence</th>
@@ -701,39 +701,39 @@ new #[Layout('layouts.app')] class extends Component
                                 <th class="py-2.5 px-3 text-center"></th>
                             </tr>
                         </thead>
-                        <tbody class="divide-y divide-slate-100 dark:divide-gray-700">
+                        <tbody class="divide-y divide-slate-100">
                             @forelse($cart as $key => $item)
-                                <tr class="hover:bg-slate-50/70 dark:hover:bg-gray-700/30">
+                                <tr class="hover:bg-slate-50/70">
                                     <td class="py-3 px-3">
-                                        <div class="font-semibold text-slate-900 dark:text-white">{{ $item['medicine_name'] }}</div>
+                                        <div class="font-semibold text-slate-900">{{ $item['medicine_name'] }}</div>
                                     </td>
                                     <td class="py-3 px-3">
-                                        <span class="font-mono text-xs font-semibold px-2 py-0.5 rounded bg-slate-100 dark:bg-gray-700 text-slate-800 dark:text-slate-200">
+                                        <span class="font-mono text-xs font-semibold px-2 py-0.5 rounded bg-slate-100 text-slate-800">
                                             {{ $item['batch_number'] }}
                                         </span>
                                     </td>
-                                    <td class="py-3 px-3 text-xs text-slate-600 dark:text-slate-400">
+                                    <td class="py-3 px-3 text-xs text-slate-600">
                                         {{ $item['expiration_date'] }}
                                     </td>
                                     <td class="py-3 px-3 text-center">
                                         <input type="number" min="1" max="{{ $item['current_quantity'] }}"
                                             value="{{ $item['quantity'] }}"
                                             wire:change="updateCartItemQuantity('{{ $key }}', $event.target.value)"
-                                            class="w-16 py-1 px-1.5 text-center text-xs border border-slate-200 dark:border-gray-600 rounded-lg focus:ring-1 focus:ring-blue-900">
+                                            class="w-16 py-1 px-1.5 text-center text-xs border border-slate-200 rounded-lg focus:ring-1 focus:ring-blue-900">
                                     </td>
                                     <td class="py-3 px-3 text-right">
                                         <input type="number" min="0" step="1"
                                             value="{{ $item['unit_price'] }}"
                                             wire:change="updateCartItemPrice('{{ $key }}', $event.target.value)"
-                                            class="w-24 py-1 px-1.5 text-right text-xs border border-slate-200 dark:border-gray-600 rounded-lg focus:ring-1 focus:ring-blue-900">
+                                            class="w-24 py-1 px-1.5 text-right text-xs border border-slate-200 rounded-lg focus:ring-1 focus:ring-blue-900">
                                     </td>
-                                    <td class="py-3 px-3 text-right font-bold text-slate-900 dark:text-white">
+                                    <td class="py-3 px-3 text-right font-bold text-slate-900">
                                         ${{ number_format((float) $item['subtotal'], 0, ',', '.') }}
                                     </td>
                                     <td class="py-3 px-3 text-center">
                                         <button type="button"
                                             wire:click="removeCartItem('{{ $key }}')"
-                                            class="text-red-500 hover:text-red-700 p-1 rounded hover:bg-red-50 dark:hover:bg-red-950/40 cursor-pointer">
+                                            class="text-red-500 hover:text-red-700 p-1 rounded hover:bg-red-50 cursor-pointer">
                                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
                                             </svg>
@@ -742,7 +742,7 @@ new #[Layout('layouts.app')] class extends Component
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="7" class="py-8 text-center text-slate-400 dark:text-slate-500 text-sm">
+                                    <td colspan="7" class="py-8 text-center text-slate-400 text-sm">
                                         No hay productos agregados a la venta. Escanea un código de barras o busca un medicamento arriba.
                                     </td>
                                 </tr>
@@ -765,9 +765,9 @@ new #[Layout('layouts.app')] class extends Component
         <div class="space-y-6">
 
             <!-- Card: Payment Terms & Checkout -->
-            <div class="bg-white dark:bg-gray-800 border border-slate-100 dark:border-gray-700 shadow-sm rounded-2xl p-5 space-y-4">
-                <h2 class="text-base font-semibold text-blue-900 dark:text-white flex items-center gap-2">
-                    <svg class="w-5 h-5 text-blue-700 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div class="bg-white border border-slate-200 shadow-sm rounded-2xl p-5 space-y-4">
+                <h2 class="text-base font-semibold text-blue-900 flex items-center gap-2">
+                    <svg class="w-5 h-5 text-blue-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"></path>
                     </svg>
                     <span>4. Método de Pago</span>
@@ -775,7 +775,7 @@ new #[Layout('layouts.app')] class extends Component
 
                 <!-- Payment Method Select -->
                 <div class="space-y-2">
-                    <label class="text-xs font-semibold text-slate-700 dark:text-slate-300">Forma de Pago</label>
+                    <label class="text-xs font-semibold text-slate-700">Forma de Pago</label>
                     <div class="grid grid-cols-3 gap-2">
                         <button type="button"
                             wire:click="$set('payment_method', 'cash')"
@@ -797,14 +797,14 @@ new #[Layout('layouts.app')] class extends Component
 
                 <!-- Conditional Credit Due Date -->
                 @if($payment_method === 'credit')
-                    <div class="p-3 bg-amber-50/70 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/60 rounded-xl space-y-2">
-                        <label for="payment_due_date" class="text-xs font-semibold text-amber-900 dark:text-amber-200">
+                    <div class="p-3 bg-amber-50 border border-amber-200 rounded-xl space-y-2">
+                        <label for="payment_due_date" class="text-xs font-semibold text-amber-900">
                             Fecha Límite de Pago a Crédito *
                         </label>
                         <input type="date" id="payment_due_date"
                             wire:model="payment_due_date"
                             min="{{ now()->toDateString() }}"
-                            class="w-full py-1.5 px-3 bg-white dark:bg-gray-800 border border-amber-300 dark:border-amber-700 rounded-lg text-xs font-medium focus:ring-1 focus:ring-blue-900">
+                            class="w-full py-1.5 px-3 bg-white border border-amber-300 rounded-lg text-xs font-medium focus:ring-1 focus:ring-blue-900">
                         
                         @error('payment_due_date')
                             <div class="text-xs text-red-600 font-medium">{{ $message }}</div>
@@ -816,18 +816,18 @@ new #[Layout('layouts.app')] class extends Component
                 @endif
 
                 <!-- Totals Breakdown -->
-                <div class="pt-4 border-t border-slate-100 dark:border-gray-700 space-y-2 text-sm">
-                    <div class="flex justify-between text-slate-600 dark:text-slate-400 text-xs">
+                <div class="pt-4 border-t border-slate-100 space-y-2 text-sm">
+                    <div class="flex justify-between text-slate-600 text-xs">
                         <span>Subtotal de Productos</span>
                         <span>${{ number_format($this->invoiceTotal, 0, ',', '.') }}</span>
                     </div>
-                    <div class="flex justify-between text-slate-600 dark:text-slate-400 text-xs">
+                    <div class="flex justify-between text-slate-600 text-xs">
                         <span>Ajuste / Redondeo</span>
                         <span>$0</span>
                     </div>
-                    <div class="flex justify-between items-baseline font-bold text-lg text-blue-950 dark:text-white pt-2 border-t border-slate-100 dark:border-gray-700">
+                    <div class="flex justify-between items-baseline font-bold text-lg text-blue-950 pt-2 border-t border-slate-100">
                         <span>Total Factura</span>
-                        <span class="text-2xl text-blue-900 dark:text-lime-400">
+                        <span class="text-2xl text-blue-900">
                             ${{ number_format($this->invoiceTotal, 0, ',', '.') }}
                         </span>
                     </div>
@@ -853,18 +853,18 @@ new #[Layout('layouts.app')] class extends Component
     <!-- MODAL 1: FEFO Lot Selection Modal -->
     @if($showLotModal && $this->selectedMedicine)
         <div class="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
-            <div class="bg-white dark:bg-gray-800 rounded-2xl max-w-2xl w-full shadow-2xl border border-slate-100 dark:border-gray-700 overflow-hidden"
+            <div class="bg-white rounded-2xl max-w-2xl w-full shadow-2xl border border-slate-200 overflow-hidden"
                 @click.outside="$wire.closeLotModal()">
                 
                 <!-- Modal Header -->
-                <div class="px-6 py-4 bg-slate-50 dark:bg-gray-750 border-b border-slate-100 dark:border-gray-700 flex items-center justify-between">
+                <div class="px-6 py-4 bg-slate-50 border-b border-slate-100 flex items-center justify-between">
                     <div>
-                        <span class="text-xs font-bold text-blue-700 dark:text-blue-400 uppercase tracking-wider">Asignación FEFO de Lotes</span>
-                        <h3 class="text-base font-bold text-slate-900 dark:text-white">{{ $this->selectedMedicine->name }}</h3>
+                        <span class="text-xs font-bold text-blue-700 uppercase tracking-wider">Asignación FEFO de Lotes</span>
+                        <h3 class="text-base font-bold text-slate-900">{{ $this->selectedMedicine->name }}</h3>
                         <p class="text-xs text-slate-500">{{ $this->selectedMedicine->presentation }} &bull; Stock Total: {{ $this->selectedMedicine->total_stock }}</p>
                     </div>
 
-                    <button type="button" wire:click="closeLotModal" class="text-slate-400 hover:text-slate-600">
+                    <button type="button" wire:click="closeLotModal" class="text-slate-400 hover:text-slate-600 cursor-pointer">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
                         </svg>
@@ -874,22 +874,22 @@ new #[Layout('layouts.app')] class extends Component
                 <!-- Modal Body -->
                 <div class="p-6 space-y-4">
                     <!-- Requested Quantity Control -->
-                    <div class="flex items-center justify-between bg-blue-50/50 dark:bg-blue-950/20 p-3 rounded-xl border border-blue-100 dark:border-blue-900/40">
-                        <label for="requestedMedicineQuantity" class="text-xs font-bold text-blue-950 dark:text-blue-200">
+                    <div class="flex items-center justify-between bg-blue-50/50 p-3 rounded-xl border border-blue-100">
+                        <label for="requestedMedicineQuantity" class="text-xs font-bold text-blue-950">
                             Cantidad Solicitada por el Cliente:
                         </label>
                         <div class="flex items-center gap-2">
                             <input type="number" id="requestedMedicineQuantity" min="1" max="{{ $this->selectedMedicine->total_stock }}"
                                 wire:model.live.debounce.300ms="requestedMedicineQuantity"
-                                class="w-20 py-1 px-2 text-center text-sm font-bold border border-blue-300 rounded-lg focus:ring-1 focus:ring-blue-900">
+                                class="w-20 py-1 px-2 text-center text-sm font-bold border border-blue-300 rounded-lg focus:ring-1 focus:ring-blue-900 bg-white">
                             <span class="text-xs text-slate-500">unidades</span>
                         </div>
                     </div>
 
                     <!-- Available Lots Breakdown Table -->
-                    <div class="overflow-x-auto border border-slate-100 dark:border-gray-700 rounded-xl">
+                    <div class="overflow-x-auto border border-slate-200 rounded-xl">
                         <table class="w-full text-left text-xs">
-                            <thead class="bg-slate-50 dark:bg-gray-700 text-slate-600 dark:text-slate-300 font-bold border-b border-slate-200 dark:border-gray-600">
+                            <thead class="bg-slate-50 text-slate-600 font-bold border-b border-slate-200">
                                 <tr>
                                     <th class="py-2 px-3">Lote</th>
                                     <th class="py-2 px-3">Vence</th>
@@ -898,9 +898,9 @@ new #[Layout('layouts.app')] class extends Component
                                     <th class="py-2 px-3 text-center">Bloquear</th>
                                 </tr>
                             </thead>
-                            <tbody class="divide-y divide-slate-100 dark:divide-gray-700">
+                            <tbody class="divide-y divide-slate-100">
                                 @forelse($fefoAllocations as $alloc)
-                                    <tr class="{{ $alloc['is_fefo_priority'] ? 'bg-lime-50/40 dark:bg-lime-950/20' : '' }}">
+                                    <tr class="{{ $alloc['is_fefo_priority'] ? 'bg-lime-50/40' : '' }}">
                                         <td class="py-2.5 px-3 font-semibold">
                                             <div class="flex items-center gap-1.5">
                                                 <span>{{ $alloc['batch_number'] }}</span>
@@ -909,17 +909,17 @@ new #[Layout('layouts.app')] class extends Component
                                                 @endif
                                             </div>
                                         </td>
-                                        <td class="py-2.5 px-3 text-slate-600 dark:text-slate-400">
+                                        <td class="py-2.5 px-3 text-slate-600">
                                             {{ $alloc['expiration_date'] }}
                                         </td>
-                                        <td class="py-2.5 px-3 text-center font-bold text-slate-700 dark:text-slate-300">
+                                        <td class="py-2.5 px-3 text-center font-bold text-slate-700">
                                             {{ $alloc['current_quantity'] }}
                                         </td>
                                         <td class="py-2.5 px-3 text-center">
                                             <input type="number" min="0" max="{{ $alloc['current_quantity'] }}"
                                                 value="{{ $alloc['allocated_quantity'] }}"
                                                 wire:change="updateLockedLotQuantity({{ $alloc['lot_id'] }}, $event.target.value)"
-                                                class="w-16 py-0.5 px-1.5 text-center text-xs font-bold border border-slate-300 rounded focus:ring-1 focus:ring-blue-900">
+                                                class="w-16 py-0.5 px-1.5 text-center text-xs font-bold border border-slate-300 rounded focus:ring-1 focus:ring-blue-900 bg-white">
                                         </td>
                                         <td class="py-2.5 px-3 text-center">
                                             <button type="button"
@@ -951,9 +951,9 @@ new #[Layout('layouts.app')] class extends Component
                 </div>
 
                 <!-- Modal Footer -->
-                <div class="px-6 py-3 bg-slate-50 dark:bg-gray-750 border-t border-slate-100 dark:border-gray-700 flex items-center justify-end gap-3">
+                <div class="px-6 py-3 bg-slate-50 border-t border-slate-100 flex items-center justify-end gap-3">
                     <button type="button" wire:click="closeLotModal"
-                        class="px-4 py-2 text-xs font-semibold text-slate-600 hover:text-slate-800">
+                        class="px-4 py-2 text-xs font-semibold text-slate-600 hover:text-slate-800 cursor-pointer">
                         Cancelar
                     </button>
 
@@ -970,16 +970,16 @@ new #[Layout('layouts.app')] class extends Component
     <!-- MODAL 2: Quick Medicine Creation Modal -->
     @if($showQuickMedicineModal)
         <div class="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
-            <div class="bg-white dark:bg-gray-800 rounded-2xl max-w-xl w-full shadow-2xl border border-slate-100 dark:border-gray-700 overflow-hidden"
+            <div class="bg-white rounded-2xl max-w-xl w-full shadow-2xl border border-slate-200 overflow-hidden"
                 @click.outside="$wire.closeQuickMedicineModal()">
                 
-                <div class="px-6 py-4 bg-slate-50 dark:bg-gray-750 border-b border-slate-100 dark:border-gray-700 flex items-center justify-between">
+                <div class="px-6 py-4 bg-slate-50 border-b border-slate-100 flex items-center justify-between">
                     <div>
-                        <h3 class="text-base font-bold text-slate-900 dark:text-white">Registrar Nuevo Medicamento Rápido</h3>
+                        <h3 class="text-base font-bold text-slate-900">Registrar Nuevo Medicamento Rápido</h3>
                         <p class="text-xs text-slate-500">Crea el producto maestro sin salir de la pantalla de venta.</p>
                     </div>
 
-                    <button type="button" wire:click="closeQuickMedicineModal" class="text-slate-400 hover:text-slate-600">
+                    <button type="button" wire:click="closeQuickMedicineModal" class="text-slate-400 hover:text-slate-600 cursor-pointer">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
                         </svg>
@@ -989,38 +989,38 @@ new #[Layout('layouts.app')] class extends Component
                 <form wire:submit="saveQuickMedicine" class="p-6 space-y-4">
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
-                            <label class="text-xs font-semibold text-slate-700 dark:text-slate-300">Nombre Comercial *</label>
+                            <label class="text-xs font-semibold text-slate-700">Nombre Comercial *</label>
                             <input type="text" wire:model="quickName" required
-                                class="w-full py-1.5 px-3 border border-slate-200 dark:border-gray-600 rounded-lg text-xs">
+                                class="w-full py-1.5 px-3 border border-slate-200 rounded-lg text-xs bg-slate-50">
                             @error('quickName') <span class="text-xs text-red-600">{{ $message }}</span> @enderror
                         </div>
 
                         <div>
-                            <label class="text-xs font-semibold text-slate-700 dark:text-slate-300">Código de Barras</label>
+                            <label class="text-xs font-semibold text-slate-700">Código de Barras</label>
                             <input type="text" wire:model="quickBarcode"
-                                class="w-full py-1.5 px-3 border border-slate-200 dark:border-gray-600 rounded-lg text-xs">
+                                class="w-full py-1.5 px-3 border border-slate-200 rounded-lg text-xs bg-slate-50">
                         </div>
                     </div>
 
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
-                            <label class="text-xs font-semibold text-slate-700 dark:text-slate-300">Nombre Genérico</label>
+                            <label class="text-xs font-semibold text-slate-700">Nombre Genérico</label>
                             <input type="text" wire:model="quickGenericName"
-                                class="w-full py-1.5 px-3 border border-slate-200 dark:border-gray-600 rounded-lg text-xs">
+                                class="w-full py-1.5 px-3 border border-slate-200 rounded-lg text-xs bg-slate-50">
                         </div>
 
                         <div>
-                            <label class="text-xs font-semibold text-slate-700 dark:text-slate-300">Precio de Venta ($) *</label>
+                            <label class="text-xs font-semibold text-slate-700">Precio de Venta ($) *</label>
                             <input type="number" min="0" step="1" wire:model="quickSellingPrice" required
-                                class="w-full py-1.5 px-3 border border-slate-200 dark:border-gray-600 rounded-lg text-xs font-bold">
+                                class="w-full py-1.5 px-3 border border-slate-200 rounded-lg text-xs font-bold bg-slate-50">
                             @error('quickSellingPrice') <span class="text-xs text-red-600">{{ $message }}</span> @enderror
                         </div>
                     </div>
 
                     <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
                         <div>
-                            <label class="text-xs font-semibold text-slate-700 dark:text-slate-300">Categoría</label>
-                            <select wire:model="quickCategoryId" class="w-full py-1.5 px-2 text-xs border border-slate-200 rounded-lg">
+                            <label class="text-xs font-semibold text-slate-700">Categoría</label>
+                            <select wire:model="quickCategoryId" class="w-full py-1.5 px-2 text-xs border border-slate-200 rounded-lg bg-slate-50">
                                 @foreach(\App\Models\Category::all() as $cat)
                                     <option value="{{ $cat->id }}">{{ $cat->name }}</option>
                                 @endforeach
@@ -1028,8 +1028,8 @@ new #[Layout('layouts.app')] class extends Component
                         </div>
 
                         <div>
-                            <label class="text-xs font-semibold text-slate-700 dark:text-slate-300">Laboratorio</label>
-                            <select wire:model="quickLaboratoryId" class="w-full py-1.5 px-2 text-xs border border-slate-200 rounded-lg">
+                            <label class="text-xs font-semibold text-slate-700">Laboratorio</label>
+                            <select wire:model="quickLaboratoryId" class="w-full py-1.5 px-2 text-xs border border-slate-200 rounded-lg bg-slate-50">
                                 @foreach(\App\Models\Laboratory::all() as $lab)
                                     <option value="{{ $lab->id }}">{{ $lab->name }}</option>
                                 @endforeach
@@ -1037,8 +1037,8 @@ new #[Layout('layouts.app')] class extends Component
                         </div>
 
                         <div>
-                            <label class="text-xs font-semibold text-slate-700 dark:text-slate-300">Registro Sanitario</label>
-                            <select wire:model="quickSanitaryRegistryId" class="w-full py-1.5 px-2 text-xs border border-slate-200 rounded-lg">
+                            <label class="text-xs font-semibold text-slate-700">Registro Sanitario</label>
+                            <select wire:model="quickSanitaryRegistryId" class="w-full py-1.5 px-2 text-xs border border-slate-200 rounded-lg bg-slate-50">
                                 @foreach(\App\Models\SanitaryRegistry::all() as $reg)
                                     <option value="{{ $reg->id }}">{{ $reg->registration_number }}</option>
                                 @endforeach
@@ -1048,7 +1048,7 @@ new #[Layout('layouts.app')] class extends Component
 
                     <div class="flex justify-end gap-3 pt-3 border-t border-slate-100">
                         <button type="button" wire:click="closeQuickMedicineModal"
-                            class="px-4 py-2 text-xs font-semibold text-slate-600 hover:text-slate-800">
+                            class="px-4 py-2 text-xs font-semibold text-slate-600 hover:text-slate-800 cursor-pointer">
                             Cancelar
                         </button>
                         <button type="submit"
@@ -1064,7 +1064,7 @@ new #[Layout('layouts.app')] class extends Component
     <!-- MODAL 3: Post-Sale Confirmation & PDF Actions -->
     @if($showSuccessModal)
         <div class="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
-            <div class="bg-white dark:bg-gray-800 rounded-2xl max-w-md w-full shadow-2xl border border-slate-100 dark:border-gray-700 p-6 text-center space-y-4">
+            <div class="bg-white rounded-2xl max-w-md w-full shadow-2xl border border-slate-200 p-6 text-center space-y-4">
                 
                 <div class="w-16 h-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto">
                     <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1073,8 +1073,8 @@ new #[Layout('layouts.app')] class extends Component
                 </div>
 
                 <div>
-                    <h3 class="text-lg font-bold text-slate-900 dark:text-white">¡Venta y Factura Generadas!</h3>
-                    <p class="text-sm font-mono font-bold text-blue-900 dark:text-blue-300 mt-1">
+                    <h3 class="text-lg font-bold text-slate-900">¡Venta y Factura Generadas!</h3>
+                    <p class="text-sm font-mono font-bold text-blue-900 mt-1">
                         {{ $createdInvoiceNumber }}
                     </p>
                     <p class="text-xs text-slate-500 mt-1">
@@ -1100,3 +1100,4 @@ new #[Layout('layouts.app')] class extends Component
         </div>
     @endif
 </div>
+
