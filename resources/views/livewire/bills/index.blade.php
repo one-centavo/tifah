@@ -204,8 +204,8 @@ new #[Layout('layouts.app')] class extends Component
     @endif
 
     <!-- Filters Bar -->
-    <div class="bg-white border border-slate-200 shadow-sm rounded-2xl p-5 mb-6 space-y-4">
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+    <div class="bg-white border border-slate-200 shadow-sm rounded-2xl p-5 mb-6 space-y-4 min-w-0">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
             
             <!-- Search -->
             <div class="lg:col-span-2">
@@ -256,8 +256,8 @@ new #[Layout('layouts.app')] class extends Component
     </div>
 
     <!-- Invoices Table -->
-    <div class="bg-white border border-slate-200 shadow-sm rounded-2xl overflow-hidden">
-        <div class="overflow-x-auto">
+    <div class="bg-white border border-slate-200 shadow-sm rounded-2xl overflow-hidden min-w-0">
+        <div class="overflow-x-auto min-w-0">
             <table class="w-full text-left text-sm border-collapse">
                 <thead class="bg-slate-50 border-b border-slate-200 text-xs font-bold text-slate-500 uppercase tracking-wider">
                     <tr>
