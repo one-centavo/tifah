@@ -8,14 +8,15 @@
 
 
 ## 2. Business Logic & Service Layer
-- [ ] Create `App\Services\BillService` / `SaleService`.
-- [ ] Implement `allocateFefoLots()` algorithm to auto-suggest and distribute quantities across earliest expiring lots.
-- [ ] Implement support for locked rows in FEFO distribution.
-- [ ] Implement `validateCreditEligibility()` checking customer debt limit against proposed invoice total.
-- [ ] Implement `createSale()` with `DB::transaction()` and pessimistic locking (`lockForUpdate`).
-- [ ] Implement stock decrement and `InventoryMovement` logging (`type = 'sale'`).
-- [ ] Implement `annulBill()` with stock restitution to original lots and compensating `InventoryMovement` (`type = 'annulment_return'`).
-- [ ] Implement mathematical integer rounding to the nearest peso for invoice totals.
+- [x] Create `App\Services\BillService` / `SaleService`.
+- [x] Implement `allocateFefoLots()` algorithm to auto-suggest and distribute quantities across earliest expiring lots.
+- [x] Implement support for locked rows in FEFO distribution.
+- [x] Implement `validateCreditEligibility()` checking customer debt limit against proposed invoice total.
+- [x] Implement `createSale()` with `DB::transaction()` and pessimistic locking (`lockForUpdate`).
+- [x] Implement stock decrement and `InventoryMovement` logging (`type = 'sale'`).
+- [x] Implement `annulBill()` with stock restitution to original lots and compensating `InventoryMovement` (`type = 'annulment_return'`).
+- [x] Implement mathematical integer rounding to the nearest peso for invoice totals.
+
 
 ## 3. Livewire Volt Components & UI
 - [ ] Create `resources/views/livewire/sales/create.blade.php` Volt component for point-of-sale invoicing.
