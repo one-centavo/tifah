@@ -132,10 +132,10 @@ new #[Layout('layouts.app')] class extends Component
     <!-- Card Form -->
     <div class="bg-white border border-slate-100 shadow-sm rounded-2xl p-6 md:p-8"
         x-data="{
-            nit: @entangled('nit'),
-            dv: @entangled('dv'),
+            nit: @entangle('nit'),
+            dv: @entangle('dv'),
             calculateDv() {
-                let clean = this.nit.replace(/[^\d]/g, '');
+                let clean = (this.nit ? String(this.nit) : '').replace(/[^\d]/g, '');
                 if (!clean) {
                     this.dv = '';
                     return;
