@@ -312,6 +312,7 @@
 
         <!-- Sidebar -->
         @php
+            $dashboardActive = request()->routeIs('dashboard');
             $medicinesActive = request()->routeIs('medicines.*');
             $categoriesActive = request()->routeIs('categories.*');
             $laboratoriesActive = request()->routeIs('laboratories.*');
@@ -329,6 +330,14 @@
             <div class="overflow-y-auto py-5 px-3 h-full bg-sidebar">
 
                 <ul class="space-y-2">
+                    <li>
+                        <a href="{{ route('dashboard') }}" wire:navigate
+                            class="flex items-center p-2 border-l-4 text-base font-medium transition-all duration-150 ease-in-out group {{ $dashboardActive ? 'bg-blue-50 text-blue-900 border-blue-900 font-semibold rounded-r-lg' : 'text-gray-900 border-transparent hover:bg-gray-100 rounded-lg' }}">
+                            <x-tabler-dashboard
+                                class="w-6 h-6 transition duration-75 {{ $dashboardActive ? 'text-blue-900' : 'text-gray-500 group-hover:text-gray-900' }}" />
+                            <span class="ml-3">Dashboard</span>
+                        </a>
+                    </li>
                     <li>
                         <a href="{{ route('sales.create') }}" wire:navigate
                             class="flex items-center p-2 border-l-4 text-base font-medium transition-all duration-150 ease-in-out group {{ $salesActive ? 'bg-blue-50 text-blue-900 border-blue-900 font-semibold rounded-r-lg' : 'text-gray-900 border-transparent hover:bg-gray-100 rounded-lg' }}">
