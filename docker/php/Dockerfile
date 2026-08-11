@@ -13,26 +13,20 @@ RUN composer install \
     --no-scripts \
     --no-autoloader
 
-# Ahora sí copiamos el código fuente (esto NO invalida la capa de arriba)
+# Copiamos el código fuente necesario para el autoloader
 COPY database/ database/
 COPY app/ app/
 COPY routes/ routes/
 
-# Autoload optimizado se genera aparte, una vez que el código está presente
-# --no-scripts evita que corra "artisan package:discover" (necesitaría el proyecto completo: artisan, config/, bootstrap/, .env)
 RUN composer dump-autoload --optimize --no-dev --classmap-authoritative --no-scripts
 
 # ---------- Stage 2: Frontend (Vite + Tailwind 4) ----------
 FROM node:22-alpine AS frontend
 WORKDIR /app
 
-RUN apk add --no-cache make g++ python3
-
 COPY package.json pnpm-lock.yaml* vite.config.js ./
 
-# corepack respeta la versión fijada en "packageManager" de package.json,
-# igual que en Dockerfile.dev, evitando mismatches de lockfileVersion
-RUN corepack enable
+RUN corepack enable pnpm
 
 RUN pnpm config set package-import-method copy \
     && pnpm install --frozen-lockfile
@@ -46,41 +40,36 @@ RUN pnpm run build
 # ---------- Stage 3: Runtime (PHP-FPM) ----------
 FROM php:8.3-fpm-alpine
 
+# Utilidades del sistema
+RUN apk add --no-cache unzip curl
+
+# Instalador optimizado de extensiones PHP oficiales
+COPY --from=mlocati/php-extension-installer:latest /usr/bin/install-php-extensions /usr/local/bin/
+
+RUN install-php-extensions \
+    pdo_mysql \
+    zip \
+    bcmath \
+    opcache \
+    gd \
+    mbstring \
+    exif \
+    pcntl \
+    intl
+
 ARG user=laravel_user
 ARG uid=1000
-
-# Dependencias del sistema + extensiones PHP (paridad con Dockerfile.dev)
-RUN apk add --no-cache \
-        unzip \
-        curl \
-        libzip-dev \
-        libpng-dev \
-        libjpeg-turbo-dev \
-        freetype-dev \
-        oniguruma-dev \
-        libxml2-dev \
-        icu-dev \
-    && docker-php-ext-configure gd --with-freetype --with-jpeg \
-    && docker-php-ext-install -j$(nproc) \
-        pdo_mysql \
-        zip \
-        bcmath \
-        opcache \
-        gd \
-        mbstring \
-        exif \
-        pcntl
 
 RUN adduser -G www-data -u ${uid} -h /home/${user} -D ${user}
 
 WORKDIR /var/www/html
 
-# --chown evita un chown -R costoso después
+# Copiar archivos del proyecto con los permisos correspondientes
 COPY --chown=${user}:www-data . .
 COPY --from=vendor --chown=${user}:www-data /app/vendor/ ./vendor/
 COPY --from=frontend --chown=${user}:www-data /app/public/build/ ./public/build/
 
-# Aquí sí corre el discovery: ya tenemos artisan, config/, bootstrap/ y vendor completos
+# Discovery de paquetes de Laravel
 RUN php artisan package:discover --ansi
 
 RUN mkdir -p storage/framework/cache/data \
