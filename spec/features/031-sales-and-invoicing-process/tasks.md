@@ -33,25 +33,25 @@
 - [x] Create invoice details modal and "Anular Factura" workflow with mandatory reason prompt.
 
 ## 4. PDF Generation & Printing
-- [ ] Create PDF template Blade view (`resources/views/pdf/invoice.blade.php`) formatted with company header, customer details, itemized batch breakdown, payment terms, and totals.
-- [ ] Implement `BillPdfController` to stream/download the generated PDF.
-- [ ] Add "Imprimir / Descargar Factura" button upon sale confirmation and in invoice list/detail views.
+- [x] Create PDF template Blade view (`resources/views/pdf/invoice.blade.php`) formatted with company header, customer details, itemized batch breakdown, payment terms, and totals.
+- [x] Implement `BillPdfController` to stream/download the generated PDF.
+- [x] Add "Imprimir / Descargar Factura" button upon sale confirmation and in invoice list/detail views.
 
 ## 5. Routing & Navigation
 - [x] Register `/sales/create` and `/bills` routes under `auth` middleware in `routes/web.php`.
-- [ ] Add "Ventas / Facturación" links in main navigation menus.
-
+- [x] Add "Ventas / Facturación" links in main navigation menus.
 
 ## 6. Testing & Quality Assurance
-- [ ] Write feature tests for customer search and selection.
-- [ ] Write feature tests for barcode scan lookup and non-existent medicine handling.
-- [ ] Write unit & feature tests for FEFO multi-lot auto-allocation and row lock overrides.
-- [ ] Write feature tests for price editing / discount overrides.
-- [ ] Write feature tests for credit limit validations and required due dates.
-- [ ] Write feature tests for concurrency stock locking and race condition prevention.
-- [ ] Write feature tests for integer rounding of totals.
-- [ ] Write feature tests for stock decrement, audit logging, and immutability (no delete).
-- [ ] Write feature tests for invoice annulment and stock restitution.
-- [ ] Write feature tests for PDF invoice generation.
-- [ ] Run `php artisan test` to ensure all tests pass without regressions.
-- [ ] Update `spec/constitution/roadmap.md` to reflect the new feature in the roadmap.
+- [x] Write feature tests for customer search and selection.
+- [x] Write feature tests for barcode scan lookup and non-existent medicine handling.
+- [x] Write unit & feature tests for FEFO multi-lot auto-allocation and row lock overrides.
+- [x] Write feature tests for price editing / discount overrides.
+- [x] Write feature tests for credit limit validations and required due dates.
+- [x] Write feature tests for concurrency stock locking and race condition prevention.
+- [x] Write feature tests for integer rounding of totals.
+- [x] Write feature tests for stock decrement, audit logging, and immutability (no delete).
+- [x] Write feature tests for invoice annulment and stock restitution.
+- [x] Write feature tests for PDF invoice generation.
+- [x] Run `php artisan test` to ensure all tests pass without regressions.
+- [x] Update `spec/constitution/roadmap.md` to reflect the new feature in the roadmap.
+

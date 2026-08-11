@@ -1,6 +1,7 @@
 # 031 · Sales and Invoicing Process (HU 24)
 
-**Status:** Draft
+**Status:** Completed
+
 
 ## What it does
 
