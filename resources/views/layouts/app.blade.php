@@ -319,6 +319,8 @@
             $providersActive = request()->routeIs('providers.*') || request()->routeIs('suppliers.*');
             $clientsActive = request()->routeIs('clients.*') || request()->routeIs('customers.*');
             $inventoryActive = request()->routeIs('inventory.*');
+            $salesActive = request()->routeIs('sales.*');
+            $billsActive = request()->routeIs('bills.*');
         @endphp
 
         <aside
@@ -327,6 +329,22 @@
             <div class="overflow-y-auto py-5 px-3 h-full bg-sidebar">
 
                 <ul class="space-y-2">
+                    <li>
+                        <a href="{{ route('sales.create') }}" wire:navigate
+                            class="flex items-center p-2 border-l-4 text-base font-medium transition-all duration-150 ease-in-out group {{ $salesActive ? 'bg-blue-50 text-blue-900 border-blue-900 font-semibold rounded-r-lg' : 'text-gray-900 border-transparent hover:bg-gray-100 rounded-lg' }}">
+                            <x-tabler-shopping-cart
+                                class="w-6 h-6 transition duration-75 {{ $salesActive ? 'text-blue-900' : 'text-gray-500 group-hover:text-gray-900' }}" />
+                            <span class="ml-3">Venta</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{{ route('bills.index') }}" wire:navigate
+                            class="flex items-center p-2 border-l-4 text-base font-medium transition-all duration-150 ease-in-out group {{ $billsActive ? 'bg-blue-50 text-blue-900 border-blue-900 font-semibold rounded-r-lg' : 'text-gray-900 border-transparent hover:bg-gray-100 rounded-lg' }}">
+                            <x-tabler-file-invoice
+                                class="w-6 h-6 transition duration-75 {{ $billsActive ? 'text-blue-900' : 'text-gray-500 group-hover:text-gray-900' }}" />
+                            <span class="ml-3">Facturas</span>
+                        </a>
+                    </li>
                     <li>
                         <a href="{{ route('medicines.index') }}" wire:navigate
                             class="flex items-center p-2 border-l-4 text-base font-medium transition-all duration-150 ease-in-out group {{ $medicinesActive ? 'bg-blue-50 text-blue-900 border-blue-900 font-semibold rounded-r-lg' : 'text-gray-900 border-transparent hover:bg-gray-100 rounded-lg' }}">
@@ -388,8 +406,10 @@
                     </li>
                 </ul>
 
+
             </div>
         </aside>
+
 
         <main class="p-4 md:ml-64 h-auto pt-20">
             {{ $slot }}

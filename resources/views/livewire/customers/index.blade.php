@@ -15,6 +15,8 @@ new #[Layout('layouts.app')] class extends Component
 
     public string $search = '';
 
+    public string $city = '';
+
     public string $status = 'active';
 
     public string $sortField = 'name';
@@ -25,6 +27,11 @@ new #[Layout('layouts.app')] class extends Component
      * Reset pagination page when filters are updated.
      */
     public function updatingSearch(): void
+    {
+        $this->resetPage();
+    }
+
+    public function updatingCity(): void
     {
         $this->resetPage();
     }
@@ -108,7 +115,12 @@ new #[Layout('layouts.app')] class extends Component
             $query->withTrashed();
         }
 
-        // 2. Search (partial match Razón Social / NIT)
+        // 2. City Filter
+        if (! empty($this->city)) {
+            $query->where('city', $this->city);
+        }
+
+        // 3. Search (partial match Razón Social / NIT)
         if (! empty(trim($this->search))) {
             $term = '%'.trim($this->search).'%';
             $query->where(function ($q) use ($term) {
@@ -117,7 +129,7 @@ new #[Layout('layouts.app')] class extends Component
             });
         }
 
-        // 3. Sorting
+        // 4. Sorting
         if ($this->sortField === 'status') {
             $direction = $this->sortDirection === 'asc' ? 'DESC' : 'ASC';
             $query->orderByRaw("deleted_at IS NULL {$direction}");
@@ -128,6 +140,12 @@ new #[Layout('layouts.app')] class extends Component
 
         return [
             'customers' => $query->paginate(10),
+            'cities' => Customer::withTrashed()
+                ->whereNotNull('city')
+                ->where('city', '!=', '')
+                ->distinct()
+                ->orderBy('city')
+                ->pluck('city'),
         ];
     }
 }; ?>
@@ -165,7 +183,7 @@ new #[Layout('layouts.app')] class extends Component
     <!-- Filters Section -->
     <div class="bg-white border border-slate-100 shadow-sm rounded-2xl p-6 mb-6">
         <h2 class="text-lg font-bold text-blue-900 mb-4 font-sans">Filtrar Clientes</h2>
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
             <!-- Search field -->
             <div>
                 <label for="search" class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">Búsqueda</label>
@@ -182,13 +200,24 @@ new #[Layout('layouts.app')] class extends Component
                 </div>
             </div>
 
+            <!-- City filter -->
+            <div>
+                <label for="city" class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">Ciudad</label>
+                <select id="city" wire:model.live="city"
+                    class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all cursor-pointer">
+                    <option value="">Todas las ciudades</option>
+                    @foreach($cities as $cityOption)
+                        <option value="{{ $cityOption }}">{{ $cityOption }}</option>
+                    @endforeach
+                </select>
+            </div>
+
             <!-- Status filter -->
             <div>
                 <label for="status" class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">Estado</label>
                 <select id="status" wire:model.live="status"
                     class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all cursor-pointer">
                     <option value="active">Activos</option>
-                    <option value="inactive">Inactivos</option>
                     <option value="archived">Archivados</option>
                     <option value="all">Todos</option>
                 </select>

@@ -11,7 +11,16 @@ class Customer extends Model
     use HasFactory;
     use SoftDeletes;
 
-    protected $fillable = ['nit', 'dv', 'name', 'city', 'address', 'phone_number', 'email', 'is_active', 'created_by', 'updated_by', 'deleted_by'];
+    protected $fillable = ['nit', 'dv', 'name', 'city', 'address', 'phone_number', 'email', 'is_active', 'credit_limit', 'created_by', 'updated_by', 'deleted_by'];
+
+    protected function casts(): array
+    {
+        return [
+            'is_active' => 'boolean',
+            'credit_limit' => 'decimal:2',
+        ];
+    }
+
 
     public function creator()
     {

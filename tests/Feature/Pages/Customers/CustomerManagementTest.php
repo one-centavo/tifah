@@ -100,6 +100,52 @@ test('it can filter customers by status', function () {
         ->assertSee('Archived Customer');
 });
 
+test('it can filter customers by city', function () {
+    $user = User::factory()->create();
+    Customer::factory()->create(['name' => 'Bogota Pharmacy', 'city' => 'Bogotá', 'is_active' => 1]);
+    Customer::factory()->create(['name' => 'Medellin Drugstore', 'city' => 'Medellín', 'is_active' => 1]);
+
+    $this->actingAs($user);
+
+    Volt::test('customers.index', ['city' => 'Bogotá'])
+        ->assertSee('Bogota Pharmacy')
+        ->assertDontSee('Medellin Drugstore');
+
+    Volt::test('customers.index', ['city' => 'Medellín'])
+        ->assertSee('Medellin Drugstore')
+        ->assertDontSee('Bogota Pharmacy');
+});
+
+test('it can sort customers by Razón Social', function () {
+    $user = User::factory()->create();
+    $customerB = Customer::factory()->create(['name' => 'Beta Pharmacy', 'is_active' => 1]);
+    $customerA = Customer::factory()->create(['name' => 'Alpha Pharmacy', 'is_active' => 1]);
+
+    $this->actingAs($user);
+
+    Volt::test('customers.index')
+        ->call('sortBy', 'name')
+        ->assertSet('sortField', 'name')
+        ->assertSet('sortDirection', 'desc')
+        ->call('sortBy', 'name')
+        ->assertSet('sortDirection', 'asc');
+});
+
+test('it displays empty state message when no customers match applied filters', function () {
+    $user = User::factory()->create();
+    Customer::factory()->create(['name' => 'Farmacia Unica', 'city' => 'Cali', 'is_active' => 1]);
+
+    $this->actingAs($user);
+
+    Volt::test('customers.index', ['search' => 'Inexistente'])
+        ->assertSee('Sin resultados')
+        ->assertSee('No se encontraron clientes que coincidan con los filtros aplicados');
+
+    Volt::test('customers.index', ['city' => 'Cartagena'])
+        ->assertSee('Sin resultados')
+        ->assertSee('No se encontraron clientes que coincidan con los filtros aplicados');
+});
+
 test('it calculates the verification digit reactively while typing NIT', function () {
     $user = User::factory()->create();
     $this->actingAs($user);
