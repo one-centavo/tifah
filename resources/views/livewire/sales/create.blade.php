@@ -2,9 +2,8 @@
 
 declare(strict_types=1);
 
-namespace App\Livewire\Sales;
-
 use App\Models\Category;
+
 use App\Models\ConcentrationUnit;
 use App\Models\Container;
 use App\Models\ContentUnit;
