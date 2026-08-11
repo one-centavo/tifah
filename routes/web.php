@@ -41,6 +41,11 @@ Route::middleware(['auth'])->group(function () {
     Volt::route('inventory', 'inventory.index')->name('inventory.index');
     Volt::route('inventory/medicines/{medicine}/lots', 'inventory.medicine-lots')->name('inventory.medicine-lots');
     Volt::route('inventory/lots/{lot}/logs', 'inventory.lot-logs')->name('inventory.lots.logs');
+
+    Volt::route('sales/create', 'sales.create')->name('sales.create');
+    Volt::route('bills', 'bills.index')->name('bills.index');
+    Route::get('bills/{bill}/pdf', [\App\Http\Controllers\BillPdfController::class, 'download'])->name('bills.pdf');
 });
+
 
 require __DIR__.'/auth.php';

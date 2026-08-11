@@ -43,6 +43,7 @@ class CustomerFactory extends Factory
             'phone_number' => fake()->numerify('3#########'),
             'email' => fake()->unique()->safeEmail(),
             'is_active' => 1,
+            'credit_limit' => fake()->randomElement([0, 1000000, 5000000, 10000000]),
             'created_by' => User::factory(),
             'updated_by' => null,
             'deleted_by' => null,

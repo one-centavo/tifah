@@ -33,7 +33,16 @@ new class extends Component
                     <x-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')" wire:navigate>
                         {{ __('Dashboard') }}
                     </x-nav-link>
+
+                    <x-nav-link :href="route('sales.create')" :active="request()->routeIs('sales.create')" wire:navigate>
+                        {{ __('Venta / Facturar') }}
+                    </x-nav-link>
+
+                    <x-nav-link :href="route('bills.index')" :active="request()->routeIs('bills.index')" wire:navigate>
+                        {{ __('Facturas') }}
+                    </x-nav-link>
                 </div>
+
             </div>
 
             <!-- Settings Dropdown -->
@@ -84,7 +93,16 @@ new class extends Component
             <x-responsive-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')" wire:navigate>
                 {{ __('Dashboard') }}
             </x-responsive-nav-link>
+
+            <x-responsive-nav-link :href="route('sales.create')" :active="request()->routeIs('sales.create')" wire:navigate>
+                {{ __('Venta / Facturar') }}
+            </x-responsive-nav-link>
+
+            <x-responsive-nav-link :href="route('bills.index')" :active="request()->routeIs('bills.index')" wire:navigate>
+                {{ __('Facturas') }}
+            </x-responsive-nav-link>
         </div>
+
 
         <!-- Responsive Settings Options -->
         <div class="pt-4 pb-1 border-t border-gray-200 dark:border-gray-600">

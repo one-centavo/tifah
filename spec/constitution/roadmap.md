@@ -22,6 +22,7 @@ _Features completadas, en orden de implementación._
 14. **028 · Edit Client (HU 21)** — Permite modificar la información de clientes registrados, validando la unicidad de NIT en registros activos, recalculando en tiempo real el DV de la DIAN, preservando la auditoría original y reflejando cambios de forma inmediata.
 15. **029 · Show and Filter Customers (HU 22)** — Permite visualizar, buscar, ordenar y filtrar los clientes registrados por su estado (activo/archivado) y ciudad, incluyendo acciones de edición y borrado suave.
 16. **030 · Delete Customer (HU 23)** — Permite archivar un cliente mediante borrado suave desde el listado, validando la inexistencia de facturas asociadas en el histórico y registrando la auditoría de eliminación.
+17. **031 · Sales and Invoicing Process (HU 24)** — Permite el registro de ventas y facturación de salida seleccionando lotes específicos bajo rotación FEFO, descarga atómica de inventario, validaciones de crédito y generación de facturas en PDF.
 
 ## Siguiente 🔜
 
