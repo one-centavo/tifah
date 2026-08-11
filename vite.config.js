@@ -7,11 +7,11 @@ dotenv.config();
 
 export default defineConfig({
     plugins: [
+        tailwindcss(),
         laravel({
             input: ["resources/css/app.css", "resources/js/app.js"],
             refresh: true,
         }),
-        tailwindcss(),
     ],
     server: {
         host: "0.0.0.0",
