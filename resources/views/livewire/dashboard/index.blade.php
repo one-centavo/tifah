@@ -41,7 +41,7 @@ new #[Layout('layouts.app')] class extends Component
     }
 }; ?>
 
-<div class="space-y-6">
+<div class="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8 space-y-6">
     <!-- Top Action & Welcome Bar -->
     <div class="bg-white border border-gray-200 rounded-xl p-5 shadow-sm">
         <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
@@ -265,7 +265,7 @@ new #[Layout('layouts.app')] class extends Component
     <!-- Row 3: Charts Section -->
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <!-- Sales & Purchases Trend Chart -->
-        <div class="lg:col-span-2 bg-white border border-gray-200 rounded-xl p-5 shadow-sm"
+        <div class="lg:col-span-2 bg-white border border-gray-200 rounded-xl p-5 shadow-sm min-w-0"
             x-data="{
                 chartInstance: null,
                 init() {
@@ -385,7 +385,7 @@ new #[Layout('layouts.app')] class extends Component
         </div>
 
         <!-- FEFO Distribution Donut Chart & Top 5 Selling -->
-        <div class="bg-white border border-gray-200 rounded-xl p-5 shadow-sm flex flex-col justify-between"
+        <div class="bg-white border border-gray-200 rounded-xl p-5 shadow-sm flex flex-col justify-between min-w-0"
             x-data="{
                 chartInstance: null,
                 init() {
@@ -462,7 +462,7 @@ new #[Layout('layouts.app')] class extends Component
     </div>
 
     <!-- Row 4: Operational Data Center (Tabs) -->
-    <div class="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
+    <div class="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden min-w-0">
         <!-- Tabs Header -->
         <div class="border-b border-gray-200 bg-gray-50 px-4">
             <nav class="flex space-x-6 overflow-x-auto" aria-label="Tabs">
