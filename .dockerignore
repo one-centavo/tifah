@@ -4,6 +4,10 @@
 .env.backup
 .env.production
 .env.testing
+.git
+.gitattributes
+.github
+.gitignore
 .phpactor.json
 .phpunit.result.cache
 /.codex
@@ -28,5 +32,9 @@ Homestead.yaml
 Thumbs.db
 /.pnpm-store
 AGENTS.md
+README.md
 /.agents
 /bootstrap/cache/*.php
+/tests
+/spec
+/docs
