@@ -29,9 +29,8 @@
 - [x] Implement payment method selector (Cash, Transfer, Credit) with conditional credit due date input.
 - [x] Implement pre-save quantity completeness validator with "Autocompletar Lotes Faltantes" action.
 - [x] Implement final submission trigger with concurrency error handling and success feedback.
-- [ ] Create `resources/views/livewire/bills/index.blade.php` to list invoices with status badges, search, and filtering.
-
-- [ ] Create invoice details modal and "Anular Factura" workflow with mandatory reason prompt.
+- [x] Create `resources/views/livewire/bills/index.blade.php` to list invoices with status badges, search, and filtering.
+- [x] Create invoice details modal and "Anular Factura" workflow with mandatory reason prompt.
 
 ## 4. PDF Generation & Printing
 - [ ] Create PDF template Blade view (`resources/views/pdf/invoice.blade.php`) formatted with company header, customer details, itemized batch breakdown, payment terms, and totals.
@@ -39,8 +38,9 @@
 - [ ] Add "Imprimir / Descargar Factura" button upon sale confirmation and in invoice list/detail views.
 
 ## 5. Routing & Navigation
-- [ ] Register `/sales/create` and `/bills` routes under `auth` middleware in `routes/web.php`.
+- [x] Register `/sales/create` and `/bills` routes under `auth` middleware in `routes/web.php`.
 - [ ] Add "Ventas / Facturación" links in main navigation menus.
+
 
 ## 6. Testing & Quality Assurance
 - [ ] Write feature tests for customer search and selection.
