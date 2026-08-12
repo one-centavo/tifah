@@ -28,7 +28,7 @@ _Features completadas, en orden de implementación._
 
 _Lo próximo a abordar. Idealmente una sola feature "en curso" a la vez._
 
-- **<Nombre>** — <qué aportaría>.
+- **032 · Expiration Alerts Management (HU 25)** — Permite el monitoreo y gestión de alertas tempranas de lotes próximos a vencer a 30, 60 y 90 días, indicador de notificaciones visuales, consolidado semanal con valuación económica al administrador y descarga de guía física de bodega.
 
 
 ## Backlog / ideas 💡
