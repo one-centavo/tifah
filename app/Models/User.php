@@ -57,6 +57,11 @@ class User extends Authenticatable
         return $this->belongsTo(User::class, 'deleted_by');
     }
 
+    public function expirationAlertDismissals()
+    {
+        return $this->hasMany(ExpirationAlertDismissal::class);
+    }
+
     /**
      * Check if the user is an Administrator.
      */
