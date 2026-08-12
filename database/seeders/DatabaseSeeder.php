@@ -16,18 +16,15 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         if (app()->environment('production')) {
-            $this->command->warn('Skipping development seeders in production environment.');
-            return;
+            $this->command->warn('Skipping test user creation in production environment.');
+        } else {
+            User::factory()->create([
+                'first_name' => 'Test',
+                'last_name' => 'User',
+                'email' => 'test@example.com',
+                'role' => 'admin',
+            ]);
         }
-
-        // User::factory(10)->create();
-
-        User::factory()->create([
-            'first_name' => 'Test',
-            'last_name' => 'User',
-            'email' => 'test@example.com',
-            'role' => 'admin',
-        ]);
 
         $this->call([
             CategorySeeder::class,
