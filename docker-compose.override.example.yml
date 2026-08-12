@@ -1,6 +1,6 @@
 services:
   # Web Server
-  web:
+  tifah-web:
     deploy: !reset
     restart: "no"
     ports:
@@ -11,7 +11,7 @@ services:
       - ./docker/nginx/default.dev.conf:/etc/nginx/conf.d/default.conf
 
   # Application
-  app:
+  tifah-app:
     build:
       context: .
       dockerfile: docker/php/Dockerfile.dev
@@ -25,7 +25,7 @@ services:
       - "${VITE_PORT:-5173}:5173"
 
   # Database
-  db:
+  tifah-db:
     deploy: !reset
     restart: "no"
     ports:
