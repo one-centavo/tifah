@@ -1,6 +1,6 @@
 # 032 · Expiration Alerts Management (HU 25)
 
-**Status:** Planned
+**Status:** Completed
 
 ## What it does
 

@@ -23,12 +23,13 @@ _Features completadas, en orden de implementación._
 15. **029 · Show and Filter Customers (HU 22)** — Permite visualizar, buscar, ordenar y filtrar los clientes registrados por su estado (activo/archivado) y ciudad, incluyendo acciones de edición y borrado suave.
 16. **030 · Delete Customer (HU 23)** — Permite archivar un cliente mediante borrado suave desde el listado, validando la inexistencia de facturas asociadas en el histórico y registrando la auditoría de eliminación.
 17. **031 · Sales and Invoicing Process (HU 24)** — Permite el registro de ventas y facturación de salida seleccionando lotes específicos bajo rotación FEFO, descarga atómica de inventario, validaciones de crédito y generación de facturas en PDF.
+18. **032 · Expiration Alerts Management (HU 25)** — Permite el monitoreo y gestión de alertas tempranas de lotes próximos a vencer a 30, 60 y 90 días, indicador de notificaciones visuales, consolidado semanal con valuación económica al administrador y descarga de guía física de bodega.
 
 ## Siguiente 🔜
 
 _Lo próximo a abordar. Idealmente una sola feature "en curso" a la vez._
 
-- **032 · Expiration Alerts Management (HU 25)** — Permite el monitoreo y gestión de alertas tempranas de lotes próximos a vencer a 30, 60 y 90 días, indicador de notificaciones visuales, consolidado semanal con valuación económica al administrador y descarga de guía física de bodega.
+- **<Nombre>** — <qué aportaría>.
 
 
 ## Backlog / ideas 💡
