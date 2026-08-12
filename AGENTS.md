@@ -14,9 +14,9 @@ Management system for pharmaceutical distributor and traceability
 
 ## Comandos
 
-- `docker compose exec app pnpm dev` -Run the server in local (This is the main command in this environment)
-- `docker compose exec app php artisan test` - Run the tests (run this before commit)
-- `docker compose exec app php pnpm run build` - Compile for production
+- `docker compose exec tifah-app pnpm dev` -Run the server in local (This is the main command in this environment)
+- `docker compose exec tifah-app php artisan test` - Run the tests (run this before commit)
+- `docker compose exec tifah-app php pnpm run build` - Compile for production
 
 ## Project Estructure
 

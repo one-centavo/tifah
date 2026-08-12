@@ -1,6 +1,6 @@
 services:
     # Web Server
-    web:
+    tifah-web:
         container_name: tifah-nginx
         image: nginx:alpine
         deploy:
@@ -13,14 +13,14 @@ services:
             - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf
             - tifah_public_assets:/var/www/html/public
         depends_on:
-            - app
+            - tifah-app
         networks:
             - tifah-network
             - proxy-network
         restart: always
 
     # Laravel Application
-    app:
+    tifah-app:
         container_name: tifah-app
         build:
             context: .
@@ -43,7 +43,7 @@ services:
         restart: always
 
     # Database
-    db:
+    tifah-db:
         container_name: tifah-mysql
         image: mysql:8.0
         deploy:
@@ -61,7 +61,9 @@ services:
         volumes:
             - tifah_db_data:/var/lib/mysql
         networks:
-            - tifah-network
+            tifah-network:
+                aliases:
+                    - db
 
 networks:
     tifah-network:
