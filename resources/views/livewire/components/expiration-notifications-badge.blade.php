@@ -101,14 +101,14 @@ new class extends Component
         x-transition:leave="transition ease-in duration-75"
         x-transition:leave-start="transform opacity-100 scale-100"
         x-transition:leave-end="transform opacity-0 scale-95"
-        class="absolute right-0 top-full mt-2 w-80 sm:w-96 rounded-xl shadow-2xl bg-white dark:bg-gray-800 ring-1 ring-black ring-opacity-5 z-50 overflow-hidden"
+        class="absolute right-0 top-full mt-2 w-80 sm:w-96 rounded-xl shadow-xl bg-white border border-gray-200 z-50 overflow-hidden"
         style="display: none;"
     >
         <!-- Dropdown Header -->
-        <div class="px-4 py-3 bg-gray-50 dark:bg-gray-900/50 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between">
+        <div class="px-4 py-3 bg-gray-50 border-b border-gray-200 flex items-center justify-between">
             <div class="flex items-center space-x-2">
-                <span class="font-semibold text-sm text-gray-900 dark:text-gray-100">Alertas de Vencimiento</span>
-                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300">
+                <span class="font-bold text-sm text-gray-900">Alertas de Vencimiento</span>
+                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-red-100 text-red-800">
                     {{ $totalAlertCount }} total
                 </span>
             </div>
@@ -117,7 +117,7 @@ new class extends Component
                 <button
                     wire:click="dismissToday"
                     type="button"
-                    class="text-xs text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 font-medium hover:underline"
+                    class="text-xs text-blue-600 hover:text-blue-800 font-medium hover:underline"
                     title="Ocultar indicador del día"
                 >
                     Limpiar hoy
@@ -126,33 +126,33 @@ new class extends Component
         </div>
 
         <!-- Notification List -->
-        <div class="max-h-72 overflow-y-auto divide-y divide-gray-100 dark:divide-gray-700">
+        <div class="max-h-72 overflow-y-auto divide-y divide-gray-100 bg-white">
             @forelse($previewBatches as $batch)
-                <div class="p-3 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition duration-150">
+                <div class="p-3 hover:bg-slate-50 transition duration-150">
                     <div class="flex items-start justify-between">
                         <div class="flex-1 min-w-0 pr-2">
-                            <p class="text-xs font-semibold text-gray-900 dark:text-gray-100 truncate">
+                            <p class="text-xs font-semibold text-gray-900 truncate">
                                 {{ $batch['medicine_name'] }}
                             </p>
-                            <p class="text-[11px] text-gray-500 dark:text-gray-400">
-                                Lote: <span class="font-mono font-medium text-gray-700 dark:text-gray-300">{{ $batch['batch_number'] }}</span> · Stock: <span class="font-semibold">{{ $batch['quantity'] }}</span>
+                            <p class="text-[11px] text-gray-600 mt-0.5">
+                                Lote: <span class="font-mono font-medium text-gray-800">{{ $batch['batch_number'] }}</span> · Stock: <span class="font-bold text-gray-900">{{ $batch['quantity'] }}</span>
                             </p>
-                            <p class="text-[10px] text-gray-400 dark:text-gray-500">
+                            <p class="text-[10px] text-gray-500">
                                 Vence: {{ \Carbon\Carbon::parse($batch['expiration_date'])->format('d/m/Y') }}
                             </p>
                         </div>
 
                         <div class="shrink-0">
                             @if($batch['tier'] === 'critical')
-                                <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300">
+                                <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-red-100 text-red-800 border border-red-200">
                                     {{ $batch['days_remaining'] }}d · Rojo
                                 </span>
                             @elseif($batch['tier'] === 'warning')
-                                <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-orange-100 text-orange-800 dark:bg-orange-900/50 dark:text-orange-300">
+                                <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-orange-100 text-orange-800 border border-orange-200">
                                     {{ $batch['days_remaining'] }}d · Naranja
                                 </span>
                             @else
-                                <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-800 dark:bg-amber-900/50 dark:text-amber-300">
+                                <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-200">
                                     {{ $batch['days_remaining'] }}d · Amarillo
                                 </span>
                             @endif
@@ -160,7 +160,7 @@ new class extends Component
                     </div>
                 </div>
             @empty
-                <div class="p-6 text-center text-xs text-gray-500 dark:text-gray-400">
+                <div class="p-6 text-center text-xs text-gray-500">
                     <svg class="mx-auto h-8 w-8 text-green-500 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
@@ -170,11 +170,11 @@ new class extends Component
         </div>
 
         <!-- Dropdown Footer -->
-        <div class="p-2 bg-gray-50 dark:bg-gray-900/50 border-t border-gray-100 dark:border-gray-700 text-center">
+        <div class="p-2.5 bg-gray-50 border-t border-gray-200 text-center">
             <a
                 href="{{ route('inventory.expiration-alerts') }}"
                 @click="open = false"
-                class="block w-full py-1.5 text-xs font-semibold text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 rounded hover:bg-blue-50 dark:hover:bg-blue-900/20 transition"
+                class="block w-full py-1.5 text-xs font-semibold text-blue-600 hover:text-blue-800 rounded hover:bg-blue-50 transition"
                 wire:navigate
             >
                 Ver listado detallado de alertas →
