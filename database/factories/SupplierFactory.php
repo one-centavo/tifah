@@ -35,13 +35,13 @@ class SupplierFactory extends Factory
     public function definition(): array
     {
         return [
-            'nit' => fake()->unique()->numerify('#########'),
+            'nit' => $this->faker->unique()->numerify('#########'),
             'dv' => fn (array $attributes) => $this->calculateDv($attributes['nit']),
-            'name' => fake()->unique()->company(),
-            'contact_person' => fake()->name(),
-            'phone_number' => fake()->numerify('3#########'),
-            'email' => fake()->unique()->safeEmail(),
-            'address' => fake()->address(),
+            'name' => $this->faker->unique()->company(),
+            'contact_person' => $this->faker->name(),
+            'phone_number' => $this->faker->numerify('3#########'),
+            'email' => $this->faker->unique()->safeEmail(),
+            'address' => $this->faker->address(),
             'created_by' => User::factory(),
             'updated_by' => null,
             'deleted_by' => null,

@@ -17,11 +17,11 @@ class SanitaryRegistryFactory extends Factory
     public function definition(): array
     {
         return [
-            'registration_number' => 'INVIMA '.fake()->unique()->numerify('20##M-#######'),
+            'registration_number' => 'INVIMA '.$this->faker->unique()->numerify('20##M-#######'),
             'laboratory_id' => Laboratory::factory(),
-            'expiration_date' => fake()->dateTimeBetween('+1 year', '+5 years')->format('Y-m-d'),
+            'expiration_date' => $this->faker->dateTimeBetween('+1 year', '+5 years')->format('Y-m-d'),
             'status' => 'valid',
-            'description' => fake()->paragraph(),
+            'description' => $this->faker->paragraph(),
             'created_by' => User::factory(),
             'updated_by' => null,
             'deleted_by' => null,
@@ -32,7 +32,7 @@ class SanitaryRegistryFactory extends Factory
     {
         return $this->state(fn (array $attributes) => [
             'status' => 'expired',
-            'expiration_date' => fake()->dateTimeBetween('-5 years', '-1 day')->format('Y-m-d'),
+            'expiration_date' => $this->faker->dateTimeBetween('-5 years', '-1 day')->format('Y-m-d'),
         ]);
     }
 
@@ -40,7 +40,7 @@ class SanitaryRegistryFactory extends Factory
     {
         return $this->state(fn (array $attributes) => [
             'status' => 'under_renewal',
-            'expiration_date' => fake()->dateTimeBetween('-30 days', '+30 days')->format('Y-m-d'),
+            'expiration_date' => $this->faker->dateTimeBetween('-30 days', '+30 days')->format('Y-m-d'),
         ]);
     }
 }

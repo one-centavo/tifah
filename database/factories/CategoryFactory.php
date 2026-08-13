@@ -16,8 +16,8 @@ class CategoryFactory extends Factory
     public function definition(): array
     {
         return [
-            'name' => fake()->unique()->words(3, true),
-            'description' => fake()->sentence(),
+            'name' => $this->faker->unique()->words(3, true),
+            'description' => $this->faker->sentence(),
             'is_cold_chain' => false,
             'is_special_control' => false,
             'created_by' => User::factory(),
