@@ -16,8 +16,8 @@ class LaboratoryFactory extends Factory
     public function definition(): array
     {
         return [
-            'name' => fake()->unique()->company(),
-            'description' => fake()->sentence(),
+            'name' => $this->faker->unique()->company(),
+            'description' => $this->faker->sentence(),
             'created_by' => User::factory(),
             'updated_by' => null,
             'deleted_by' => null,

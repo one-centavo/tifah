@@ -35,15 +35,15 @@ class CustomerFactory extends Factory
     public function definition(): array
     {
         return [
-            'nit' => fake()->unique()->numerify('#########'),
+            'nit' => $this->faker->unique()->numerify('#########'),
             'dv' => fn (array $attributes) => $this->calculateDv($attributes['nit']),
-            'name' => fake()->unique()->company(),
-            'city' => fake()->city(),
-            'address' => fake()->address(),
-            'phone_number' => fake()->numerify('3#########'),
-            'email' => fake()->unique()->safeEmail(),
+            'name' => $this->faker->unique()->company(),
+            'city' => $this->faker->city(),
+            'address' => $this->faker->address(),
+            'phone_number' => $this->faker->numerify('3#########'),
+            'email' => $this->faker->unique()->safeEmail(),
             'is_active' => 1,
-            'credit_limit' => fake()->randomElement([0, 1000000, 5000000, 10000000]),
+            'credit_limit' => $this->faker->randomElement([0, 1000000, 5000000, 10000000]),
             'created_by' => User::factory(),
             'updated_by' => null,
             'deleted_by' => null,

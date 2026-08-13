@@ -18,10 +18,10 @@ class PurchaseOrderFactory extends Factory
     {
         return [
             'supplier_id' => Supplier::factory(),
-            'status' => fake()->randomElement(['pending', 'received', 'cancelled']),
-            'expected_date' => fake()->dateTimeBetween('now', '+1 month')->format('Y-m-d'),
+            'status' => $this->faker->randomElement(['pending', 'received', 'cancelled']),
+            'expected_date' => $this->faker->dateTimeBetween('now', '+1 month')->format('Y-m-d'),
             'received_at' => null,
-            'total_estimated' => fake()->randomFloat(2, 50000, 5000000),
+            'total_estimated' => $this->faker->randomFloat(2, 50000, 5000000),
             'created_by' => User::factory(),
             'updated_by' => null,
             'deleted_by' => null,
@@ -32,7 +32,7 @@ class PurchaseOrderFactory extends Factory
     {
         return $this->state(fn (array $attributes) => [
             'status' => 'received',
-            'received_at' => fake()->dateTimeBetween('-1 month', 'now'),
+            'received_at' => $this->faker->dateTimeBetween('-1 month', 'now'),
         ]);
     }
 }

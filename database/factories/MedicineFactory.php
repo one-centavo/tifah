@@ -32,18 +32,18 @@ class MedicineFactory extends Factory
                     'laboratory_id' => $attributes['laboratory_id'] ?? $laboratoryId,
                 ])->id;
             },
-            'name' => fake()->unique()->words(2, true),
-            'generic_name' => fake()->words(2, true),
-            'concentration_value' => fake()->randomFloat(2, 1, 1000),
+            'name' => $this->faker->unique()->words(2, true),
+            'generic_name' => $this->faker->words(2, true),
+            'concentration_value' => $this->faker->randomFloat(2, 1, 1000),
             'concentration_unit_id' => ConcentrationUnit::factory(),
             'container_id' => Container::factory(),
-            'content_quantity' => fake()->numberBetween(1, 100),
+            'content_quantity' => $this->faker->numberBetween(1, 100),
             'content_unit_id' => ContentUnit::factory(),
             'is_cold_chain' => false,
             'is_special_control' => false,
-            'min_stock' => fake()->numberBetween(5, 20),
-            'selling_price' => fake()->randomFloat(2, 1000, 200000),
-            'description' => fake()->sentence(),
+            'min_stock' => $this->faker->numberBetween(5, 20),
+            'selling_price' => $this->faker->randomFloat(2, 1000, 200000),
+            'description' => $this->faker->sentence(),
             'created_by' => User::factory(),
             'updated_by' => null,
             'deleted_by' => null,
@@ -69,7 +69,7 @@ class MedicineFactory extends Factory
         return $this->has(
             MedicineBarcode::factory()->state(function (array $attributes, Medicine $medicine) use ($barcode) {
                 return [
-                    'barcode' => $barcode ?? fake()->unique()->numerify('##########'),
+                    'barcode' => $barcode ?? $this->faker->unique()->numerify('##########'),
                     'is_main' => true,
                     'created_by' => $medicine->created_by,
                 ];

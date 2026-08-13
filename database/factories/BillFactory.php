@@ -18,11 +18,11 @@ class BillFactory extends Factory
     {
         return [
             'id_customer' => Customer::factory(),
-            'invoice_number' => 'FAC-' . str_pad((string) fake()->unique()->numberBetween(1, 999999), 6, '0', STR_PAD_LEFT),
+            'invoice_number' => 'FAC-' . str_pad((string) $this->faker->unique()->numberBetween(1, 999999), 6, '0', STR_PAD_LEFT),
             'status' => 'active',
             'payment_method' => 'cash',
             'payment_due_date' => null,
-            'total_amount' => fake()->randomFloat(2, 5000, 500000),
+            'total_amount' => $this->faker->randomFloat(2, 5000, 500000),
             'annulled_reason' => null,
             'annulled_by' => null,
             'annulled_at' => null,

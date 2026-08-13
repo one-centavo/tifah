@@ -15,8 +15,8 @@ class ConcentrationUnitFactory extends Factory
     public function definition(): array
     {
         return [
-            'name' => fake()->unique()->word().' '.fake()->unique()->word(),
-            'symbol' => fake()->unique()->lexify('???'),
+            'name' => $this->faker->unique()->word().' '.$this->faker->unique()->word(),
+            'symbol' => $this->faker->unique()->lexify('???'),
         ];
     }
 }
