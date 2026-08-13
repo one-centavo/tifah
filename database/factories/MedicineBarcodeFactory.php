@@ -15,7 +15,7 @@ class MedicineBarcodeFactory extends Factory
     {
         return [
             'medicine_id' => Medicine::factory(),
-            'barcode' => fake()->unique()->numerify('##########'),
+            'barcode' => $this->faker->unique()->numerify('##########'),
             'is_main' => false,
             'created_by' => User::factory(),
             'updated_by' => null,
